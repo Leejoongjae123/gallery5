@@ -27,15 +27,15 @@ export default function BottomNavigation() {
         </Link>
         <Link href="/magazineList" className={`flex flex-col items-center justify-center w-1/4 h-full ${pathname.startsWith('/magazine') ? 'text-[#007AFF]' : 'text-gray-500 hover:text-[#007AFF]'}`}>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5V6.5A2.5 2.5 0 016.5 4H20v13M4 19.5V21h16v-1.5" />
           </svg>
-          <span className="text-xs mt-1">리스트</span>
+          <span className="text-xs mt-1">매거진</span>
         </Link>
-        <Link href={user ? "/exhibitions?isBookmark=true" : "/mypage?returnUrl=/exhibitions?isBookmark=true"} className={`flex flex-col items-center justify-center w-1/4 h-full ${pathname.startsWith('/exhibitions') ? 'text-[#007AFF]' : 'text-gray-500 hover:text-[#007AFF]'}`}>
+        <Link href="/artstore" className={`flex flex-col items-center justify-center w-1/4 h-full ${pathname.startsWith('/artstore') ? 'text-[#007AFF]' : 'text-gray-500 hover:text-[#007AFF]'}`}>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14l1 12H4L5 8zm2-3a3 3 0 016 0v3" />
           </svg>
-          <span className="text-xs mt-1">북마크</span>
+          <span className="text-xs mt-1">아트샵</span>
         </Link>
         
         <Link href="/mypage" className={`flex flex-col items-center justify-center w-1/4 h-full ${pathname.startsWith('/mypage') ? 'text-[#007AFF]' : 'text-gray-500 hover:text-[#007AFF]'}`}>

@@ -300,9 +300,8 @@ export default function GalleryCards({ selectedTab, user }) {
               <div className="flex text-sm justify-between items-center">
                 <div className=" rounded-md text-[10px] text-[#BDBDBD] ">평균별점</div>
                 <div className="flex items-center gap-x-1">
-                  
                   <span className="text-[10px] text-[#007AFF]">{gallery.visitor_rating || "1.0"}</span>
-                  <FaStar className="text-[#007AFF] " />
+                  <FaStar className="text-[#007AFF] w-[12px] h-[12px] align-middle relative top-[1px]" />
                 </div>
               </div>
             </CardBody>

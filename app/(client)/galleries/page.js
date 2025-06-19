@@ -77,10 +77,10 @@ function GalleryListContent() {
 
   // 페이지가 변경될 때 갤러리 데이터 로드
   useEffect(() => {
-    if (initialized && currentPage > 1) {
+    if (initialized) {
       fetchGalleries(currentPage);
     }
-  }, [currentPage]);
+  }, [currentPage, initialized]);
 
   // 추천 갤러리와 별점 높은 갤러리 동시에 가져오기
   useEffect(() => {
@@ -469,9 +469,8 @@ function GalleryListContent() {
                   page={currentPage}
                   onChange={handlePageChange}
                   showControls
-                  size="sm"
                   color="primary"
-                  variant="light"
+                  size="lg"
                 />
               </div>
             )}

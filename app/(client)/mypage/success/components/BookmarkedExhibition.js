@@ -16,7 +16,7 @@ import { FaCalendar } from "react-icons/fa6";
 import { IoMdPin } from "react-icons/io";
 
 
-export default function BookmarkedExhibition({ user }) {
+export default function BookmarkedExhibition({ user, alarmExhibition }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [bookmarkedExhibitions, setBookmarkedExhibitions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -129,6 +129,21 @@ export default function BookmarkedExhibition({ user }) {
     fetchBookmarkedExhibitions();
   }, []);
 
+  // 알림 전시회가 있으면 최상단에 강제 노출 (중복 방지)
+  let finalExhibitions = bookmarkedExhibitions;
+  if (alarmExhibition) {
+    const alreadyExists = bookmarkedExhibitions.some(e => e.id === alarmExhibition.id);
+    if (!alreadyExists) {
+      finalExhibitions = [alarmExhibition, ...bookmarkedExhibitions];
+    } else {
+      // 이미 있으면 해당 전시회를 맨 앞으로 이동
+      finalExhibitions = [
+        ...bookmarkedExhibitions.filter(e => e.id === alarmExhibition.id),
+        ...bookmarkedExhibitions.filter(e => e.id !== alarmExhibition.id)
+      ];
+    }
+  }
+
   // 더보기 버튼 클릭 시 실행되는 함수
   const loadMoreExhibitions = () => {
     if (displayCount + 5 >= bookmarkedExhibitions.length) {
@@ -136,6 +151,27 @@ export default function BookmarkedExhibition({ user }) {
       setHasMore(false);
     } else {
       setDisplayCount(displayCount + 5);
+    }
+  };
+
+  // 북마크 해제 함수
+  const handleUnbookmark = async (e, item) => {
+    e.preventDefault();
+    e.stopPropagation();
+    let filter = { user_id: user.id };
+    if (item.type === 'gallery') filter.gallery_id = item.id;
+    else if (item.type === 'product') filter.product_id = item.id;
+    else filter.exhibition_id = item.id;
+    try {
+      const { error } = await supabase.from('bookmark').delete().match(filter);
+      if (error) throw error;
+      setBookmarkedExhibitions(prev => prev.filter(i => {
+        if (item.type === 'gallery') return !(i.id === item.id && i.type === 'gallery');
+        if (item.type === 'product') return !(i.id === item.id && i.type === 'product');
+        return !(i.id === item.id && !i.type);
+      }));
+    } catch (err) {
+      console.log('북마크 해제 오류:', err);
     }
   };
 
@@ -162,11 +198,15 @@ export default function BookmarkedExhibition({ user }) {
     <>
       <div className="flex flex-col items-center gap-4 w-full px-2 justify-center">
         <div className="grid gap-4 w-full justify-center items-center">
-          {bookmarkedExhibitions.length > 0 ? (
-            bookmarkedExhibitions.slice(0, displayCount).map((item, index) => (
-              <Card key={index} className="w-full">
+          {finalExhibitions.length > 0 ? (
+            finalExhibitions.slice(0, displayCount).map((item, index) => (
+              <Card key={index} className="w-full relative">
                 <Link href={getItemUrl(item)}>
                   <CardBody className="flex gap-4 flex-row justify-center items-center">
+                    {/* 북마크 해제 버튼 */}
+                    <div className="absolute top-2 right-2 z-10" onClick={e => handleUnbookmark(e, item)}>
+                      <FaBookmark className="text-red-500 text-lg bg-gray-300 rounded-full p-1 cursor-pointer font-bold" title="즐겨찾기 해제" />
+                    </div>
                     <img
                       src={item.type === 'gallery' 
                         ? item.thumbnail 
@@ -179,14 +219,14 @@ export default function BookmarkedExhibition({ user }) {
                     <div className="flex flex-col w-full min-w-0">
                       <div className="flex flex-row justify-between items-start">
                         <div className="flex flex-col min-w-0">
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-gray-500 sm:text-xs text-[11px] max-[390px]:text-[10px]">
                             {item.type === 'gallery' 
                               ? '갤러리' 
                               : item.type === 'product'
                                 ? '작품'
                                 : '전시회'}
                           </div>
-                          <div className="text-lg font-bold truncate">
+                          <div className="text-lg font-bold truncate sm:text-lg text-[13px] max-[390px]:text-[12px]">
                             {item.type === 'gallery' 
                               ? item.name 
                               : item.type === 'product'
@@ -200,7 +240,7 @@ export default function BookmarkedExhibition({ user }) {
                         orientation="horizontal"
                         className="bg-gray-300"
                       />
-                      <div className="text-xs flex flex-col my-2">
+                      <div className="text-xs flex flex-col my-2 sm:text-xs text-[11px] max-[390px]:text-[10px]">
                         {item.type === 'gallery' ? (
                           <div className="flex flex-row gap-1 items-center">
                             <IoMdPin className="w-3 h-3 text-[#007AFF]" />
@@ -209,7 +249,7 @@ export default function BookmarkedExhibition({ user }) {
                         ) : item.type === 'product' ? (
                           <>
                             <div className="flex flex-row gap-1 items-center ">
-                            <FaMoneyBillWaveAlt className="w-3 h-3 text-[#007AFF]" />
+                              <FaMoneyBillWaveAlt className="w-3 h-3 text-[#007AFF]" />
                               ₩{formatPrice(item.price)}원
                             </div>
                             
@@ -229,7 +269,7 @@ export default function BookmarkedExhibition({ user }) {
                             </div>
                             <div className="flex flex-row gap-1 items-center">
                               <IoMdPin className="w-3 h-3 text-[#007AFF]" />
-                              {item.gallery.address}
+                              {item.gallery?.address || '-'}
                             </div>
                             <div className="flex flex-row gap-1 items-center">
                               <FaMoneyBillWaveAlt className="w-3 h-3 text-[#007AFF]" />

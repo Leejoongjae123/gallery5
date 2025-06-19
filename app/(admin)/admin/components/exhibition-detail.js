@@ -8,6 +8,9 @@ import { v4 as uuidv4 } from "uuid";
 import { QRCodeSVG } from "qrcode.react";
 import Froala from "./Froala";
 import RichTextEditor from "./RichTextEditor/RichTextEditor";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { ko } from "date-fns/locale";
 
 export function ExhibitionDetail({
   exhibition,
@@ -23,7 +26,10 @@ export function ExhibitionDetail({
   // 전시회 ID가 없으면 신규 등록 모드로 간주
   const isNewExhibition = !exhibition.id;
   const [isEditing, setIsEditing] = React.useState(isNewExhibition);
-  const [editedExhibition, setEditedExhibition] = React.useState(exhibition);
+  const [editedExhibition, setEditedExhibition] = React.useState({
+    ...exhibition,
+    free_ticket_limit: exhibition.free_ticket_limit !== undefined && exhibition.free_ticket_limit !== null ? exhibition.free_ticket_limit : 0,
+  });
   // 이전 전시회 ID를 저장하는 ref
   const prevExhibitionIdRef = React.useRef(exhibition.id);
   const supabase = createClient();
@@ -36,6 +42,10 @@ export function ExhibitionDetail({
   const [qrValue, setQrValue] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const qrRef = useRef(null);
+
+  // DatePicker 관련 상태
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
 
   useEffect(() => {
     console.log('ExhibitionDetail: exhibition prop 변경됨:', exhibition);
@@ -105,32 +115,49 @@ export function ExhibitionDetail({
     reader.readAsDataURL(file);
   };
 
+  // 브라우저에서 WebP 변환 함수
+  async function fileToWebP(file) {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      const reader = new FileReader();
+      reader.onload = (e) => { img.src = e.target.result; };
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(
+          (blob) => { resolve(blob); },
+          'image/webp',
+          0.8 // 압축률(0~1)
+        );
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   const uploadImage = async () => {
     if (!imageFile) return null;
-    
     try {
       setIsUploading(true);
-      
-      // 고유한 파일명 생성
-      const fileExt = imageFile.name.split(".").pop();
-      const fileName = `${uuidv4()}.${fileExt}`;
+      const fileName = `${uuidv4()}.webp`;
       const filePath = `exhibition/${fileName}`;
-      
-      // Supabase Storage에 파일 업로드
+      // WebP 변환
+      const webpBlob = await fileToWebP(imageFile);
+      // Supabase Storage에 업로드
       const { data, error } = await supabase.storage
         .from("exhibition")
-        .upload(filePath, imageFile, {
+        .upload(filePath, webpBlob, {
+          contentType: 'image/webp',
           cacheControl: '3600',
           upsert: false
         });
-      
       if (error) throw error;
-      
       // 공개 URL 가져오기
       const { data: { publicUrl } } = supabase.storage
         .from("exhibition")
         .getPublicUrl(filePath);
-      
       return publicUrl;
     } catch (error) {
       console.error("이미지 업로드 오류:", error);
@@ -176,27 +203,32 @@ export function ExhibitionDetail({
           ? editedExhibition.naver_gallery_url.url || "" 
           : editedExhibition.naver_gallery_url || "";
         
+        let payload = {
+          name: editedExhibition.name,
+          contents: editedExhibition.contents,
+          photo: photoUrl, // 새 이미지 URL 사용
+          start_date: editedExhibition.start_date,
+          end_date: editedExhibition.end_date,
+          working_hour: editedExhibition.working_hour,
+          off_date: editedExhibition.off_date,
+          add_info: editedExhibition.add_info,
+          homepage_url: editedExhibition.homepage_url,
+          isFree: editedExhibition.isFree,
+          isRecommended: editedExhibition.isRecommended,
+          review_count: editedExhibition.review_count,
+          review_average: editedExhibition.review_average,
+          naver_gallery_url: naver_gallery_url,
+          price: editedExhibition.price,
+          isSale: editedExhibition.isSale,
+          pick: editedExhibition.pick,
+        };
+        if (editedExhibition.isSale) {
+          payload.free_ticket_limit = editedExhibition.free_ticket_limit;
+        }
+        
         const { error } = await supabase
           .from("exhibition")
-          .update({
-            name: editedExhibition.name,
-            contents: editedExhibition.contents,
-            photo: photoUrl, // 여기서 새 이미지 URL 사용
-            start_date: editedExhibition.start_date,
-            end_date: editedExhibition.end_date,
-            working_hour: editedExhibition.working_hour,
-            off_date: editedExhibition.off_date,
-            add_info: editedExhibition.add_info,
-            homepage_url: editedExhibition.homepage_url,
-            isFree: editedExhibition.isFree,
-            isRecommended: editedExhibition.isRecommended,
-            review_count: editedExhibition.review_count,
-            review_average: editedExhibition.review_average,
-            naver_gallery_url: naver_gallery_url,
-            price: editedExhibition.price,
-            isSale: editedExhibition.isSale,
-            pick: editedExhibition.pick,
-          })
+          .update(payload)
           .eq("id", editedExhibition.id);
 
         if (error) {
@@ -353,29 +385,32 @@ export function ExhibitionDetail({
           ? (editedExhibition.naver_gallery_url?.url || "") 
           : (editedExhibition.naver_gallery_url || "");
         
+        let payload = {
+          name: editedExhibition.name,
+          contents: editedExhibition.contents,
+          photo: photoUrl,
+          start_date: editedExhibition.start_date,
+          end_date: editedExhibition.end_date,
+          working_hour: editedExhibition.working_hour,
+          off_date: editedExhibition.off_date,
+          add_info: editedExhibition.add_info,
+          homepage_url: editedExhibition.homepage_url,
+          isFree: editedExhibition.isFree,
+          isRecommended: editedExhibition.isRecommended,
+          review_count: editedExhibition.review_count,
+          review_average: editedExhibition.review_average,
+          naver_gallery_url: naver_gallery_url_value,
+          price: editedExhibition.price,
+          isSale: editedExhibition.isSale,
+          pick: editedExhibition.pick,
+        };
+        if (editedExhibition.isSale) {
+          payload.free_ticket_limit = editedExhibition.free_ticket_limit;
+        }
+        
         const { data, error } = await supabase
           .from("exhibition")
-          .insert([
-            {
-              name: editedExhibition.name,
-              contents: editedExhibition.contents,
-              photo: photoUrl,
-              start_date: editedExhibition.start_date,
-              end_date: editedExhibition.end_date,
-              working_hour: editedExhibition.working_hour,
-              off_date: editedExhibition.off_date,
-              add_info: editedExhibition.add_info,
-              homepage_url: editedExhibition.homepage_url,
-              isFree: editedExhibition.isFree,
-              isRecommended: editedExhibition.isRecommended,
-              review_count: editedExhibition.review_count,
-              review_average: editedExhibition.review_average,
-              naver_gallery_url: naver_gallery_url_value,
-              price: editedExhibition.price,
-              isSale: editedExhibition.isSale,
-              pick: editedExhibition.pick,
-            },
-          ])
+          .insert([payload])
           .select();
 
         if (error) {
@@ -440,7 +475,8 @@ export function ExhibitionDetail({
         naver_gallery_url:"",
         price:0,
         isSale: false,
-        pick: false
+        pick: false,
+        free_ticket_limit: 0,
       });
       // 목록 새로고침 실행
       try {
@@ -509,7 +545,8 @@ export function ExhibitionDetail({
       naver_gallery_url:"",
       price:0,
       isSale: false,
-      pick: false
+      pick: false,
+      free_ticket_limit: 0,
     });
     setSelectedExhibition(null);
   };
@@ -747,23 +784,157 @@ export function ExhibitionDetail({
           </div>
         </div>
         
-        <Input
-          label="전시시작"
-          value={editedExhibition.start_date||""}
-          onValueChange={(value) =>
-            setEditedExhibition({ ...editedExhibition, start_date: value })
-          }
-          className="col-span-2 md:col-span-1"
-        />
-        <Input
-          label="전시종료"
-          value={editedExhibition.end_date||""}
-          onValueChange={(value) =>
-            setEditedExhibition({ ...editedExhibition, end_date: value })
-          }
-          className="col-span-2 md:col-span-1"
-          isRequired={true}
-        />
+        {/* 전시시작/종료 달력 UI - 신규 등록 모드일 때 갤러리와 동일하게 */}
+        {isNewExhibition ? (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="relative">
+                <label className="text-sm font-medium mb-1 block">전시시작 *</label>
+                <DatePicker
+                  locale={ko}
+                  selected={startDate}
+                  onChange={(date) => {
+                    setStartDate(date);
+                    if (date) {
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, "0");
+                      const day = String(date.getDate()).padStart(2, "0");
+                      setEditedExhibition({ ...editedExhibition, start_date: `${year}${month}${day}` });
+                    }
+                  }}
+                  dateFormat="yyyy.MM.dd"
+                  customInput={
+                    <div className="relative">
+                      <input
+                        className="w-full pl-3 pr-10 py-2 rounded-lg border-2 border-gray-400 focus:border-blue-500 focus:outline-none cursor-pointer text-lg"
+                        value={
+                          editedExhibition.start_date
+                            ? `${editedExhibition.start_date.slice(0,4)}.${editedExhibition.start_date.slice(4,6)}.${editedExhibition.start_date.slice(6,8)}`
+                            : ""
+                        }
+                        readOnly
+                        placeholder="YYYY.MM.DD"
+                      />
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                        <Icon icon="lucide:calendar" className="text-gray-500 text-xl" />
+                      </div>
+                    </div>
+                  }
+                  popperClassName="react-datepicker-popper z-50"
+                />
+              </div>
+              <div className="relative">
+                <label className="text-sm font-medium mb-1 block">전시종료 *</label>
+                <DatePicker
+                  locale={ko}
+                  selected={endDate}
+                  onChange={(date) => {
+                    setEndDate(date);
+                    if (date) {
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, "0");
+                      const day = String(date.getDate()).padStart(2, "0");
+                      setEditedExhibition({ ...editedExhibition, end_date: `${year}${month}${day}` });
+                    }
+                  }}
+                  dateFormat="yyyy.MM.dd"
+                  customInput={
+                    <div className="relative">
+                      <input
+                        className="w-full pl-3 pr-10 py-2 rounded-lg border-2 border-gray-400 focus:border-blue-500 focus:outline-none cursor-pointer text-lg"
+                        value={
+                          editedExhibition.end_date
+                            ? `${editedExhibition.end_date.slice(0,4)}.${editedExhibition.end_date.slice(4,6)}.${editedExhibition.end_date.slice(6,8)}`
+                            : ""
+                        }
+                        readOnly
+                        placeholder="YYYY.MM.DD"
+                      />
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                        <Icon icon="lucide:calendar" className="text-gray-500 text-xl" />
+                      </div>
+                    </div>
+                  }
+                  popperClassName="react-datepicker-popper z-50"
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          // 기존 코드 유지 (수정/상세 모드)
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">전시시작 *</label>
+              <DatePicker
+                locale={ko}
+                selected={startDate}
+                onChange={(date) => {
+                  setStartDate(date);
+                  if (date) {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, "0");
+                    const day = String(date.getDate()).padStart(2, "0");
+                    setEditedExhibition({ ...editedExhibition, start_date: `${year}${month}${day}` });
+                  }
+                }}
+                dateFormat="yyyy.MM.dd"
+                customInput={
+                  <div className="relative">
+                    <input
+                      className="w-full pl-3 pr-10 py-2 rounded-lg border-2 border-gray-400 focus:border-blue-500 focus:outline-none cursor-pointer text-lg"
+                      value={
+                        editedExhibition.start_date
+                          ? `${editedExhibition.start_date.slice(0,4)}.${editedExhibition.start_date.slice(4,6)}.${editedExhibition.start_date.slice(6,8)}`
+                          : ""
+                      }
+                      readOnly
+                      placeholder="YYYY.MM.DD"
+                    />
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                      <Icon icon="lucide:calendar" className="text-gray-500 text-xl" />
+                    </div>
+                  </div>
+                }
+                popperClassName="react-datepicker-popper z-50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">전시종료 *</label>
+              <DatePicker
+                locale={ko}
+                selected={endDate}
+                onChange={(date) => {
+                  setEndDate(date);
+                  if (date) {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, "0");
+                    const day = String(date.getDate()).padStart(2, "0");
+                    setEditedExhibition({ ...editedExhibition, end_date: `${year}${month}${day}` });
+                  }
+                }}
+                dateFormat="yyyy.MM.dd"
+                customInput={
+                  <div className="relative">
+                    <input
+                      className="w-full pl-3 pr-10 py-2 rounded-lg border-2 border-gray-400 focus:border-blue-500 focus:outline-none cursor-pointer text-lg"
+                      value={
+                        editedExhibition.end_date
+                          ? `${editedExhibition.end_date.slice(0,4)}.${editedExhibition.end_date.slice(4,6)}.${editedExhibition.end_date.slice(6,8)}`
+                          : ""
+                      }
+                      readOnly
+                      placeholder="YYYY.MM.DD"
+                    />
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                      <Icon icon="lucide:calendar" className="text-gray-500 text-xl" />
+                    </div>
+                  </div>
+                }
+                popperClassName="react-datepicker-popper z-50"
+              />
+            </div>
+          </div>
+        )}
 
         <Input
           label="운영 시간"
@@ -869,15 +1040,40 @@ export function ExhibitionDetail({
             >
               추천 전시회로 표시
             </Checkbox>
-            <Checkbox
-              id="isSale"
-              isSelected={editedExhibition.isSale||false}
-              onValueChange={(value) =>
-                setEditedExhibition({ ...editedExhibition, isSale: value })
-              }
-            >
-              티켓판매로 표시
-            </Checkbox>
+            {/* 티켓판매로 표시 + 무료티켓 전체수량 UI 개선 (가로 정렬) */}
+            <div className="flex flex-row items-center gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50 w-fit mb-2">
+              <Checkbox
+                id="isSale"
+                isSelected={editedExhibition.isSale||false}
+                onValueChange={(value) =>
+                  setEditedExhibition({
+                    ...editedExhibition,
+                    isSale: value,
+                    free_ticket_limit:
+                      value && (editedExhibition.free_ticket_limit === undefined || editedExhibition.free_ticket_limit === '' || isNaN(Number(editedExhibition.free_ticket_limit)))
+                        ? 0
+                        : editedExhibition.free_ticket_limit,
+                  })
+                }
+                className="whitespace-nowrap"
+              >
+                티켓판매로 표시
+              </Checkbox>
+              <Input
+                type="number"
+                min={1}
+                step={1}
+                size="sm"
+                label=""
+                value={editedExhibition.free_ticket_limit ?? 0}
+                onValueChange={(v) => setEditedExhibition({ ...editedExhibition, free_ticket_limit: v.replace(/[^0-9]/g, '') })}
+                isDisabled={!editedExhibition.isSale}
+                placeholder="티켓수량 (예: 100)"
+                className="w-40 border border-blue-300 bg-white px-2 py-1 rounded-md"
+                style={{minWidth:'160px'}}
+              />
+            </div>
+            <span className="text-xs text-gray-500 mt-1 ml-1 mb-2 block">무료티켓 수량을 입력하세요</span>
             <Checkbox
               id="pick"
               isSelected={editedExhibition.pick || false}

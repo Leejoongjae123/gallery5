@@ -16,6 +16,7 @@ const nextConfig = {
     ],
     unoptimized: true,
   },
+  productionBrowserSourceMaps: true,
 };
 
 module.exports = nextConfig; 

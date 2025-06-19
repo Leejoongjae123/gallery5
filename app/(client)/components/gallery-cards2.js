@@ -2,7 +2,7 @@
 import { Card, CardBody, Divider, Skeleton, Spinner } from "@heroui/react";
 import { FaRegCalendar } from "react-icons/fa";
 import { IoMdPin } from "react-icons/io";
-import { FaRegStar } from "react-icons/fa";
+import { FaRegStar, FaStar } from "react-icons/fa";
 import { FaRegBookmark, FaBookmark } from "react-icons/fa6";
 import Link from "next/link";
 import { FaPlusCircle } from "react-icons/fa";
@@ -301,7 +301,7 @@ export default function GalleryCards({ selectedTab, user }) {
                         <span className="text-blue-500 font-semibold">
                           {gallery.visitor_rating || "3.5"}
                         </span>
-                        <FaRegStar className="text-blue-500" />
+                        <FaStar className="text-[#007AFF] w-[12px] h-[12px] align-middle relative top-[1px]" />
                       </div>
                     </div>
                   </CardBody>

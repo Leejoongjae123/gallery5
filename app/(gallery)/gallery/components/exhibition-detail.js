@@ -18,6 +18,48 @@ const FroalaEditor = dynamic(
   }
 );
 
+// 브라우저에서 WebP 변환 함수 (최대 1200px 리사이즈 적용)
+async function fileToWebP(file) {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    const reader = new FileReader();
+    reader.onload = (e) => { img.src = e.target.result; };
+    img.onload = () => {
+      // 최대 크기 제한
+      const maxSize = 1200;
+      let targetW = img.width;
+      let targetH = img.height;
+      if (img.width > maxSize || img.height > maxSize) {
+        if (img.width > img.height) {
+          targetW = maxSize;
+          targetH = Math.round(img.height * (maxSize / img.width));
+        } else {
+          targetH = maxSize;
+          targetW = Math.round(img.width * (maxSize / img.height));
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, targetW, targetH);
+      canvas.toBlob(
+        (blob) => {
+          // webp base64로 변환
+          const reader2 = new FileReader();
+          reader2.onloadend = () => {
+            resolve(reader2.result);
+          };
+          reader2.readAsDataURL(blob);
+        },
+        'image/webp',
+        0.8
+      );
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export function ExhibitionDetail({
   galleryInfo,
   exhibition = {},
@@ -67,70 +109,19 @@ export function ExhibitionDetail({
   }, [selectedKey, exhibition, isNew]);
   
   // 저장 핸들러 - 내용이 변경되면 자동으로 저장
-  const handleSave = async () => {
-    // 필수 필드 검증
-    if (!editedExhibition.contents) {
-      addToast({
-        title: "전시회명 오류",
-        description: "전시회명은 필수 입력 항목입니다.",
-        color: "danger",
-      });
-      return;
-    }
-    if (!editedExhibition.end_date) {
-      addToast({
-        title: "종료일 오류",
-        description: "종료일은 필수 입력 항목입니다.",
-        color: "danger",
-      });
-      return;
-    }
-    if (!editedExhibition.start_date) {
-      addToast({
-        title: "시작일 오류",
-        description: "시작일은 필수 입력 항목입니다.",
-        color: "danger",
-      });
-      return;
-    }
-
-    
-
-
-    // 날짜 형식 검증
-    const validateDateFormat = (dateStr) => {
-      if (!dateStr || dateStr.trim() === "") return true;
-      return /^\d{8}$/.test(dateStr.trim());
-    };
-
-    if (!validateDateFormat(editedExhibition.start_date)) {
-      addToast({
-        title: "날짜 형식 오류",
-        description: "시작일은 YYYYmmdd 형식으로 입력해주세요. (예: 20240101)",
-        color: "danger",
-      });
-      return;
-    }
-
-    if (!validateDateFormat(editedExhibition.end_date)) {
-      addToast({
-        title: "날짜 형식 오류",
-        description: "종료일은 YYYYmmdd 형식으로 입력해주세요. (예: 20240131)",
-        color: "danger",
-      });
-      return;
-    }
-
-
+  const handleSave = async (e) => {
+    if (e) e.preventDefault(); // form submit 방지
+    if (isSaving) return; // 중복 실행 방지
     setIsSaving(true);
     try {
       if (isNew) {
-        // 신규 전시회 저장
         if (onSave) {
           onSave(editedExhibition);
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
         }
       } else {
-        // 기존 전시회 업데이트
         if (onUpdate) {
           onUpdate(editedExhibition);
         }
@@ -177,16 +168,13 @@ export function ExhibitionDetail({
     // 여기서 변경사항 즉시 저장하지 않고, 사용자가 저장 버튼을 누를 때 저장하도록 변경
   };
 
-  // 이미지 변경 핸들러
-  const handleImageChange = (e) => {
+  // handleImageChange에서 webp 변환 적용
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-        handleFieldChange("photo", reader.result);
-      };
-      reader.readAsDataURL(file);
+      const webpBase64 = await fileToWebP(file);
+      setImagePreview(webpBase64);
+      handleFieldChange("photo", webpBase64);
     }
   };
   console.log("editedExhibition", editedExhibition);
@@ -197,21 +185,21 @@ export function ExhibitionDetail({
         <h2 className="text-xl font-semibold">
           {isNew ? "신규 전시회 등록" : "전시회 정보"}
         </h2>
-        {!isReadOnly && (
+        {!isReadOnly && step !== 2 && (
           <div className="flex gap-2">
             {(!isNew || step === 2) && (
-              <Button color="primary" onPress={handleSave} isLoading={isSaving}>
+              <Button color="primary" onClick={handleSave} isLoading={isSaving} type="button">
                 <Icon icon="lucide:save" className="text-lg mr-1" />
-                {isNew ? "추가" : "저장"}
+                {isNew ? "등록" : "수정한내용저장"}
               </Button>
             )}
             {!isNew && (
-              <Button color="danger" variant="flat" onPress={handleDelete}>
+              <Button color="danger" variant="flat" onClick={handleDelete}>
                 <Icon icon="lucide:trash" className="mr-1" />
                 삭제
               </Button>
             )}
-            <Button color="default" variant="flat" onPress={handleCancel}>
+            <Button color="default" variant="flat" onClick={handleCancel}>
               취소
             </Button>
           </div>
@@ -221,17 +209,18 @@ export function ExhibitionDetail({
         step === 1 ? (
           <>
             <div className="grid grid-cols-1 gap-4">
-              <Input
+              {/* <Input
                 label="갤러리명"
                 value={galleryInfo?.name || ""}
                 onValueChange={(value) => handleFieldChange("name", value)}
                 isDisabled
-              />
+              /> */}
               <Input
                 label="전시회명"
                 value={editedExhibition.contents || ""}
                 onValueChange={(value) => handleFieldChange("contents", value)}
                 isReadOnly={isReadOnly}
+                className="border-2 border-gray-400 focus:border-blue-500 focus:outline-none"
               />
               <div className="relative">
                 <label className="text-small font-medium block mb-2">전시시작 *</label>
@@ -259,7 +248,7 @@ export function ExhibitionDetail({
                     customInput={
                       <div className="relative">
                         <input
-                          className="w-full pl-3 pr-10 py-2 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:outline-none cursor-pointer text-lg"
+                          className="w-full pl-3 pr-10 py-2 rounded-lg border-2 border-gray-400 focus:border-blue-500 focus:outline-none cursor-pointer text-lg"
                           value={
                             editedExhibition.start_date
                               ? `${editedExhibition.start_date.slice(0,4)}.${editedExhibition.start_date.slice(4,6)}.${editedExhibition.start_date.slice(6,8)}`
@@ -303,7 +292,7 @@ export function ExhibitionDetail({
                     customInput={
                       <div className="relative">
                         <input
-                          className="w-full pl-3 pr-10 py-2 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:outline-none cursor-pointer text-lg"
+                          className="w-full pl-3 pr-10 py-2 rounded-lg border-2 border-gray-400 focus:border-blue-500 focus:outline-none cursor-pointer text-lg"
                           value={
                             editedExhibition.end_date
                               ? `${editedExhibition.end_date.slice(0,4)}.${editedExhibition.end_date.slice(4,6)}.${editedExhibition.end_date.slice(6,8)}`
@@ -327,6 +316,7 @@ export function ExhibitionDetail({
                 onValueChange={(value) => handleFieldChange("working_hour", value)}
                 isReadOnly={isReadOnly}
                 placeholder="예: 10:00 - 18:00"
+                className="border-2 border-gray-400 focus:border-blue-500 focus:outline-none"
               />
 
               <Input
@@ -335,9 +325,10 @@ export function ExhibitionDetail({
                 onValueChange={(value) => handleFieldChange("off_date", value)}
                 isReadOnly={isReadOnly}
                 placeholder="예: 매주 월요일"
+                className="border-2 border-gray-400 focus:border-blue-500 focus:outline-none"
               />
 
-              <Input
+              {/* <Input
                 label="네이버 갤러리 URL"
                 value={galleryInfo?.url || ""}
                 onValueChange={(value) =>
@@ -345,13 +336,14 @@ export function ExhibitionDetail({
                 }
                 isReadOnly={isReadOnly}
                 isDisabled
-              />
+              /> */}
 
               <Input
                 label="홈페이지 URL"
                 value={editedExhibition.homepage_url || ""}
                 onValueChange={(value) => handleFieldChange("homepage_url", value)}
                 isReadOnly={isReadOnly}
+                className="border-2 border-gray-400 focus:border-blue-500 focus:outline-none"
               />
 
               <Input
@@ -360,6 +352,7 @@ export function ExhibitionDetail({
                 value={editedExhibition.price || 0}
                 onValueChange={(value) => handleFieldChange("price", value)}
                 isReadOnly={isReadOnly}
+                className="border-2 border-gray-400 focus:border-blue-500 focus:outline-none"
               />
 
               <div className="flex flex-col gap-2">
@@ -377,7 +370,7 @@ export function ExhibitionDetail({
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-small font-medium">전시회 이미지</label>
+                  <label className="text-small font-medium">포스터 이미지</label>
                   <Button 
                     color="primary" 
                     variant="flat" 
@@ -395,7 +388,7 @@ export function ExhibitionDetail({
                     <div className="relative w-full">
                       <img
                         src={imagePreview}
-                        alt="전시회 이미지"
+                        alt="포스터 이미지"
                         className="w-full h-48 object-cover rounded-md"
                       />
                       {!isReadOnly && (
@@ -460,24 +453,25 @@ export function ExhibitionDetail({
             />
             <div className="flex justify-end gap-2 mt-4">
               <Button onClick={() => setStep(1)} variant="outline">이전</Button>
-              <Button color="primary" onClick={handleSave} isLoading={isSaving}>저장</Button>
+              <Button color="primary" onClick={handleSave} isLoading={isSaving}>수정한내용저장</Button>
             </div>
           </div>
         )
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          <Input
+          {/* <Input
             label="갤러리명"
             value={galleryInfo?.name || ""}
             onValueChange={(value) => handleFieldChange("name", value)}
             isDisabled
-          />
+          /> */}
 
           <Input
             label="전시회명"
             value={editedExhibition.contents || ""}
             onValueChange={(value) => handleFieldChange("contents", value)}
             isReadOnly={isReadOnly}
+            className="border-2 border-gray-400 focus:border-blue-500 focus:outline-none"
           />
 
           <div className="relative">
@@ -506,7 +500,7 @@ export function ExhibitionDetail({
                 customInput={
                   <div className="relative">
                     <input
-                      className="w-full pl-3 pr-10 py-2 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:outline-none cursor-pointer text-lg"
+                      className="w-full pl-3 pr-10 py-2 rounded-lg border-2 border-gray-400 focus:border-blue-500 focus:outline-none cursor-pointer text-lg"
                       value={
                         editedExhibition.start_date
                           ? `${editedExhibition.start_date.slice(0,4)}.${editedExhibition.start_date.slice(4,6)}.${editedExhibition.start_date.slice(6,8)}`
@@ -550,7 +544,7 @@ export function ExhibitionDetail({
                 customInput={
                   <div className="relative">
                     <input
-                      className="w-full pl-3 pr-10 py-2 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:outline-none cursor-pointer text-lg"
+                      className="w-full pl-3 pr-10 py-2 rounded-lg border-2 border-gray-400 focus:border-blue-500 focus:outline-none cursor-pointer text-lg"
                       value={
                         editedExhibition.end_date
                           ? `${editedExhibition.end_date.slice(0,4)}.${editedExhibition.end_date.slice(4,6)}.${editedExhibition.end_date.slice(6,8)}`
@@ -574,6 +568,7 @@ export function ExhibitionDetail({
             onValueChange={(value) => handleFieldChange("working_hour", value)}
             isReadOnly={isReadOnly}
             placeholder="예: 10:00 - 18:00"
+            className="border-2 border-gray-400 focus:border-blue-500 focus:outline-none"
           />
 
           <Input
@@ -582,9 +577,10 @@ export function ExhibitionDetail({
             onValueChange={(value) => handleFieldChange("off_date", value)}
             isReadOnly={isReadOnly}
             placeholder="예: 매주 월요일"
+            className="border-2 border-gray-400 focus:border-blue-500 focus:outline-none"
           />
 
-          <Input
+          {/* <Input
             label="네이버 갤러리 URL"
             value={galleryInfo?.url || ""}
             onValueChange={(value) =>
@@ -592,13 +588,14 @@ export function ExhibitionDetail({
             }
             isReadOnly={isReadOnly}
             isDisabled
-          />
+          /> */}
 
           <Input
             label="홈페이지 URL"
             value={editedExhibition.homepage_url || ""}
             onValueChange={(value) => handleFieldChange("homepage_url", value)}
             isReadOnly={isReadOnly}
+            className="border-2 border-gray-400 focus:border-blue-500 focus:outline-none"
           />
 
           <Input
@@ -607,6 +604,7 @@ export function ExhibitionDetail({
             value={editedExhibition.price || 0}
             onValueChange={(value) => handleFieldChange("price", value)}
             isReadOnly={isReadOnly}
+            className="border-2 border-gray-400 focus:border-blue-500 focus:outline-none"
           />
 
           <div className="flex flex-col gap-2">
@@ -624,7 +622,7 @@ export function ExhibitionDetail({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-small font-medium">전시회 이미지</label>
+              <label className="text-small font-medium">포스터 이미지</label>
               <Button 
                 color="primary" 
                 variant="flat" 
@@ -642,7 +640,7 @@ export function ExhibitionDetail({
                 <div className="relative w-full">
                   <img
                     src={imagePreview}
-                    alt="전시회 이미지"
+                    alt="포스터 이미지"
                     className="w-full h-48 object-cover rounded-md"
                   />
                   {!isReadOnly && (
@@ -710,6 +708,13 @@ export function ExhibitionDetail({
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {false && (
+        <div className="flex justify-end gap-2 mt-4">
+          <Button onClick={onCancel} variant="light">취소</Button>
+          <Button color="primary" onClick={handleSave} isLoading={isSaving} type="button">등록</Button>
         </div>
       )}
 

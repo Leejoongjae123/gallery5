@@ -12,6 +12,11 @@ import useUserInfoStore from "../store/userInfo";
 import dynamic from "next/dynamic";
 
 import { v4 as uuidv4 } from "uuid";
+import DatePicker from "react-datepicker";
+import { CalendarIcon } from "lucide-react";
+import { format, parse } from "date-fns";
+import { ko } from "date-fns/locale";
+
 const FroalaEditor = dynamic(
   () => import("@/app/(admin)/admin/components/Froala"),
   {
@@ -61,10 +66,9 @@ const formatDateForInput = (isoDate) => {
 
 export default function Exhibition() {
   const { userInfo } = useUserInfoStore();
-  // Supabase 클라이언트 생성
   const supabase = createClient();
-
-  // 상태 관리
+  const [isReady, setIsReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [exhibitions, setExhibitions] = useState([]);
   const [selectedExhibition, setSelectedExhibition] = useState(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -72,77 +76,115 @@ export default function Exhibition() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
   const [galleryInfo, setGalleryInfo] = useState(null);
   const itemsPerPage = 5;
+  const [startDate, setStartDate] = useState(() => {
+    const s = selectedExhibition?.start_date;
+    return s ? parse(s, "yyyyMMdd", new Date()) : null;
+  });
+  const [endDate, setEndDate] = useState(() => {
+    const e = selectedExhibition?.end_date;
+    return e ? parse(e, "yyyyMMdd", new Date()) : null;
+  });
+  const [price, setPrice] = useState(selectedExhibition?.price || 0);
+  const [reloadTimeout, setReloadTimeout] = useState(null);
 
+  // 1. userInfo가 준비된 후에만 fetchAll 실행
   useEffect(() => {
-    setGalleryInfo(null); // userInfo가 바뀌면 galleryInfo 초기화
-    if (userInfo?.url) {
-      const fetchGalleryInfo = async () => {
+    if (!userInfo?.url) return;
+    const fetchAll = async () => {
+      setIsLoading(true);
+      // galleryInfo fetch
+      let galleryData = null;
+      try {
         const { data, error } = await supabase
           .from("gallery")
           .select("*")
-          .eq("url", userInfo?.url)
+          .eq("url", userInfo.url)
           .single();
+        if (error) throw error;
+        galleryData = data;
+        setGalleryInfo(data);
+      } catch (e) {
+        setGalleryInfo(null);
+      }
+      setIsLoading(false);
+      setIsReady(true);
+    };
+    fetchAll();
+  }, [userInfo]);
 
-        if (error) {
-          console.log("갤러리 정보를 가져오는 중 오류 발생:", error);
-        } else {
-          setGalleryInfo(data);
-        }
-      };
-      fetchGalleryInfo();
-    }
-  }, [userInfo?.url]);
-  console.log("galleryInfo", galleryInfo);
-
-  // 전시회 데이터 로드 함수
-  const loadExhibitions = async () => {
-    if (userInfo?.url) {
+  // 2. 페이지/검색어 변경 시에는 userInfo가 준비된 상태에서만 fetch
+  useEffect(() => {
+    if (!userInfo?.url) return;
+    const fetchExhibitions = async () => {
       setIsLoading(true);
       try {
         const start = (currentPage - 1) * itemsPerPage;
         const end = start + itemsPerPage - 1;
-
         let query = supabase
           .from("exhibition")
           .select("*", { count: "exact" })
           .range(start, end)
           .order("created_at", { ascending: false })
-          .eq("naver_gallery_url", userInfo?.url);
-
+          .eq("naver_gallery_url", userInfo.url);
         if (searchTerm) {
           query = query.or(
             `name.ilike.%${searchTerm}%, contents.ilike.%${searchTerm}%, add_info.ilike.%${searchTerm}%`
           );
         }
-
         const { data, error, count } = await query;
-
         if (error) throw error;
-
         setExhibitions(data || []);
         setTotalPages(Math.ceil((count || 0) / itemsPerPage));
-      } catch (error) {
-        console.error("전시회 데이터를 가져오는 중 오류 발생:", error);
-      } finally {
-        setIsLoading(false);
+      } catch (e) {
+        setExhibitions([]);
       }
-    }
-  };
+      setIsLoading(false);
+    };
+    fetchExhibitions();
+  }, [currentPage, searchTerm, userInfo]);
 
-  // 페이지나 검색어가 변경될 때 데이터 로드
   useEffect(() => {
-    loadExhibitions();
-  }, [currentPage, searchTerm]);
-
-  // userInfo가 변경될 때 데이터 로드하는 useEffect 추가
-  useEffect(() => {
-    if (userInfo?.url) {
-      loadExhibitions();
+    if (selectedExhibition) {
+      setStartDate(selectedExhibition.start_date ? parse(selectedExhibition.start_date, "yyyyMMdd", new Date()) : null);
+      setEndDate(selectedExhibition.end_date ? parse(selectedExhibition.end_date, "yyyyMMdd", new Date()) : null);
+      setPrice(selectedExhibition.price || 0);
     }
+  }, [selectedExhibition]);
+
+  useEffect(() => {
+    if (!userInfo?.url) {
+      // 3초(3000ms) 동안 userInfo가 세팅되지 않으면 강제 새로고침
+      const timeout = setTimeout(() => {
+        window.location.reload();
+      }, 3000);
+      setReloadTimeout(timeout);
+    } else {
+      // userInfo가 세팅되면 타이머 해제
+      if (reloadTimeout) clearTimeout(reloadTimeout);
+    }
+    // 언마운트 시 타이머 해제
+    return () => {
+      if (reloadTimeout) clearTimeout(reloadTimeout);
+    };
   }, [userInfo]);
+
+  if (!isReady) {
+    return (
+      <div className="w-full h-full flex flex-col gap-4 py-20">
+        <div className="w-full max-w-7xl mx-auto space-y-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold">전시 관리</h1>
+          </div>
+          <div className="flex flex-col items-center justify-center min-h-[300px]">
+            <Spinner color="primary" />
+            <div className="mt-4">데이터를 불러오는 중...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // 신규 전시회 생성 핸들러
   const handleNewExhibition = () => {
@@ -226,10 +268,10 @@ export default function Exhibition() {
       setSelectedExhibition(savedExhibition);
       setSelectedKey(new Set([savedExhibition.id.toString()]));
 
-      // 데이터 새로고침
+      // 데이터 새로고침 대신 0.1초 뒤 강제 새로고침
       setTimeout(() => {
-        loadExhibitions();
-      }, 300);
+        window.location.reload();
+      }, 100);
     } catch (error) {
       console.error("전시회 저장 중 오류 발생:", error);
     }
@@ -381,7 +423,7 @@ export default function Exhibition() {
 
       // 데이터 새로고침
       setTimeout(() => {
-        loadExhibitions();
+        fetchAll();
       }, 300);
     } catch (error) {
       console.error("전시회 업데이트 중 오류 발생:", error);
@@ -413,10 +455,10 @@ export default function Exhibition() {
         setSelectedExhibition(null);
         setSelectedKey(new Set([]));
 
-        // 데이터 새로고침
+        // 데이터 새로고침 대신 0.1초 뒤 강제 새로고침
         setTimeout(() => {
-          loadExhibitions();
-        }, 300);
+          window.location.reload();
+        }, 100);
       } catch (error) {
         addToast({
           title: "삭제 실패",
@@ -453,10 +495,14 @@ export default function Exhibition() {
   };
 
   const handleRefresh = () => {
+    if (!userInfo || !userInfo.url) {
+      // userInfo 준비 전이면 fetch 시도하지 않음
+      return;
+    }
     setCurrentPage(1);
     setSearchTerm("");
     setTimeout(() => {
-      loadExhibitions();
+      fetchAll();
     }, 0);
   };
 
@@ -497,20 +543,10 @@ export default function Exhibition() {
             <table className="w-full border-collapse border-spacing-0 min-w-[600px]">
               <thead className="bg-default-100">
                 <tr>
-                  <th className="p-3 text-left border-b ">
-                    <div className="flex items-center gap-2">
-                      <span>등록된전시(새로고침)</span>
-                      <button
-                        onClick={handleRefresh}
-                        className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shadow hover:bg-blue-200 active:bg-blue-300 transition-colors border border-blue-200"
-                        aria-label="새로고침"
-                        type="button"
-                      >
-                        <Icon icon="lucide:refresh-ccw" className="text-xl text-blue-600" />
-                      </button>
-                    </div>
+                  <th className="p-3 text-left border-b w-1/2 max-w-[50%]">
+                    등록된전시
                   </th>
-                  <th className="p-3 text-left border-b ">전시날짜</th>
+                  <th className="p-3 text-left border-b w-1/2">전시날짜</th>
                 </tr>
               </thead>
               <tbody>
@@ -538,11 +574,11 @@ export default function Exhibition() {
                       onClick={() => handleSelectExhibition(exhibition)}
                     >
                       {/* 제목 */}
-                      <td className="p-3">
+                      <td className="p-3 w-1/2 max-w-xs whitespace-nowrap overflow-hidden text-ellipsis align-middle">
                         {exhibition.contents}
                       </td>
                       {/* 날짜 */}
-                      <td className="p-3">
+                      <td className="p-3 w-1/2 max-w-xs whitespace-nowrap overflow-hidden text-ellipsis align-middle">
                         {exhibition.start_date && exhibition.end_date
                           ? formatDateRange(
                               exhibition.start_date,
@@ -587,7 +623,7 @@ export default function Exhibition() {
                   isLoading={isLoading}
                 >
                   <Icon icon="lucide:save" className="text-lg mr-1" />
-                  저장
+                  {isCreatingNew ? "등록" : "수정한내용저장"}
                 </Button>
                 <Button
                   onClick={handleDelete}
@@ -601,7 +637,7 @@ export default function Exhibition() {
               </div>
 
               {/* 직접 편집 가능한 폼 영역 */}
-              <div className="space-y-6">
+              <form className="space-y-6 w-full lg:max-w-3xl lg:mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">
@@ -679,39 +715,97 @@ export default function Exhibition() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">
-                      시작일
+                    <label htmlFor="startDate" className="block text-sm font-medium mb-1">
+                      전시시작 *
                     </label>
-                    <Input
-                      value={selectedExhibition?.start_date || ""}
-                      onChange={(e) =>
-                        handleFieldChange("start_date", e.target.value)
-                      }
-                      className="w-full"
-                      placeholder="YYYYmmdd 형식 (예: 20240531)"
+                    <DatePicker
+                      id="startDate"
+                      locale={ko}
+                      selected={startDate}
+                      onChange={(date) => {
+                        setStartDate(date);
+                        handleFieldChange("start_date", format(date, "yyyyMMdd"));
+                      }}
+                      dateFormat="yyyy.MM.dd"
+                      placeholderText="YYYY.MM.DD"
+                      className="w-full border rounded p-2 pl-10"
+                      calendarIcon={<CalendarIcon className="absolute left-3 top-3 text-gray-500" />}
+                      renderCustomHeader={({
+                        date,
+                        decreaseMonth,
+                        increaseMonth,
+                        prevMonthButtonDisabled,
+                        nextMonthButtonDisabled,
+                      }) => (
+                        <div className="flex items-center justify-between px-2 py-1 bg-white">
+                          <button
+                            onClick={decreaseMonth}
+                            disabled={prevMonthButtonDisabled}
+                            className="text-gray-500 hover:text-gray-700"
+                          >
+                            ◀
+                          </button>
+                          <span className="font-medium">
+                            {format(date, "yyyy.MM", { locale: ko })}
+                          </span>
+                          <button
+                            onClick={increaseMonth}
+                            disabled={nextMonthButtonDisabled}
+                            className="text-gray-500 hover:text-gray-700"
+                          >
+                            ▶
+                          </button>
+                        </div>
+                      )}
+                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">
-                      종료일 <span className="text-red-500">*</span>
+                    <label htmlFor="endDate" className="block text-sm font-medium mb-1">
+                      전시종료 *
                     </label>
-                    <Input
-                      value={selectedExhibition?.end_date || ""}
-                      onChange={(e) =>
-                        handleFieldChange("end_date", e.target.value)
-                      }
-                      className="w-full"
-                      placeholder="YYYYmmdd 형식 (예: 20240630)"
-                      color={
-                        !selectedExhibition?.end_date ? "danger" : "default"
-                      }
-                      helperText={
-                        !selectedExhibition?.end_date
-                          ? "종료일은 필수 입력 항목입니다"
-                          : ""
-                      }
+                    <DatePicker
+                      id="endDate"
+                      locale={ko}
+                      selected={endDate}
+                      onChange={(date) => {
+                        setEndDate(date);
+                        handleFieldChange("end_date", format(date, "yyyyMMdd"));
+                      }}
+                      dateFormat="yyyy.MM.dd"
+                      placeholderText="YYYY.MM.DD"
+                      className="w-full border rounded p-2 pl-10"
+                      calendarIcon={<CalendarIcon className="absolute left-3 top-3 text-gray-500" />}
+                      renderCustomHeader={({
+                        date,
+                        decreaseMonth,
+                        increaseMonth,
+                        prevMonthButtonDisabled,
+                        nextMonthButtonDisabled,
+                      }) => (
+                        <div className="flex items-center justify-between px-2 py-1 bg-white">
+                          <button
+                            onClick={decreaseMonth}
+                            disabled={prevMonthButtonDisabled}
+                            className="text-gray-500 hover:text-gray-700"
+                          >
+                            ◀
+                          </button>
+                          <span className="font-medium">
+                            {format(date, "yyyy.MM", { locale: ko })}
+                          </span>
+                          <button
+                            onClick={increaseMonth}
+                            disabled={nextMonthButtonDisabled}
+                            className="text-gray-500 hover:text-gray-700"
+                          >
+                            ▶
+                          </button>
+                        </div>
+                      )}
+                      required
                     />
                   </div>
                 </div>
@@ -743,18 +837,24 @@ export default function Exhibition() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      무료 여부
-                    </label>
-                    <Switch
-                      isSelected={selectedExhibition.isFree}
-                      onValueChange={(value) =>
-                        handleFieldChange("isFree", value)
-                      }
-                    />
-                  </div>
+                {/* 가격 입력 필드 (무료 여부 토글 대신) */}
+                <div className="space-y-1">
+                  <label htmlFor="price" className="block text-sm font-medium">
+                    가격 (₩)
+                  </label>
+                  <input
+                    id="price"
+                    type="number"
+                    value={price}
+                    onChange={(e) => {
+                      const v = Number(e.target.value) || 0;
+                      setPrice(v);
+                      handleFieldChange("price", v);
+                    }}
+                    onFocus={e => e.target.select()}
+                    className="w-full border rounded p-2"
+                    placeholder="₩0"
+                  />
                 </div>
 
                 <div>
@@ -785,7 +885,7 @@ export default function Exhibition() {
                     className="w-full"
                   />
                 </div>
-              </div>
+              </form>
             </div>
           ) : (
             <div className="text-center text-default-500 py-8">

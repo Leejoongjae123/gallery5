@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardBody, Skeleton } from "@heroui/react";
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
+import Image from "next/image";
 
 export function GalleryBanner() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -113,10 +114,20 @@ export function GalleryBanner() {
           ) : banners.length > 0 && (
             <Link href={banners[currentSlide]?.link || "#"} className="block">
               <div className="relative">
-                <img
-                  src={banners[currentSlide]?.url || `https://picsum.photos/800/200?random=${currentSlide}`}
+                <Image
+                  src={
+                    banners[currentSlide]?.url
+                      ? banners[currentSlide].url.includes('/thumbnails/')
+                        ? banners[currentSlide].url
+                        : banners[currentSlide].url.replace('/gallery/', '/gallery/thumbnails/')
+                      : `https://picsum.photos/800/200?random=${currentSlide}`
+                  }
                   alt={banners[currentSlide]?.title || `배너 ${currentSlide + 1}`}
+                  width={800}
+                  height={200}
+                  priority
                   className="w-full h-[150px] object-cover"
+                  style={{ borderRadius: '16px' }}
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
                   <h3 className="text-white font-bold text-lg">

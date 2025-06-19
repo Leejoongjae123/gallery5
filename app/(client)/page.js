@@ -96,12 +96,11 @@ export default function Home() {
           <div className="w-1/6"></div>
           <div className="flex w-2/3">
             <button
-              className={`text-[12px] flex-1 py-3 text-center font-medium ${exhibitionCategory === "recommended" ? "border-t-4 border-black text-black" : "text-gray-500"}`}
-              onClick={() => setExhibitionCategory("recommended")}
+              className={`text-[12px] flex-1 py-3 text-center font-medium ${exhibitionCategory === "all" ? "border-t-4 border-black text-black" : "text-gray-500"}`}
+              onClick={() => setExhibitionCategory("all")}
             >
-              추천전시
+              전체전시
             </button>
-
             <button
               className={`text-[12px] flex-1 py-3 text-center font-medium ${exhibitionCategory === "free" ? "border-t-4 border-black text-black" : "text-gray-500"}`}
               onClick={() => setExhibitionCategory("free")}
@@ -109,10 +108,10 @@ export default function Home() {
               무료전시
             </button>
             <button
-              className={`text-[12px] flex-1 py-3 text-center font-medium ${exhibitionCategory === "all" ? "border-t-4 border-black text-black" : "text-gray-500"}`}
-              onClick={() => setExhibitionCategory("all")}
+              className={`text-[12px] flex-1 py-3 text-center font-medium ${exhibitionCategory === "recommended" ? "border-t-4 border-black text-black" : "text-gray-500"}`}
+              onClick={() => setExhibitionCategory("recommended")}
             >
-              전체전시
+              추천전시
             </button>
           </div>
           <div className="w-1/6"></div>
@@ -155,11 +154,13 @@ export default function Home() {
 
       {/* Magazine Section */}
       <MagazineCarousel />
-      <div className="flex flex-row gap-4 pt-4 pb-[80px] bg-[hsl(0,0%,93%)] w-full justify-center items-center">
+      {/* 매거진과 푸터 사이 넉넉한 흰색 여백 */}
+      <div style={{ height: '48px', background: '#fff', width: '100%' }} />
+      <div className="flex flex-row gap-4 pt-4 pb-[32px] bg-[hsl(0,0%,93%)] w-full justify-center items-center">
         <div className="w-[30%] h-full flex justify-center items-center ">
           <Image
-            src="/footer/footer.png"
-            alt="noimage"
+            src="/logo/logomain.png"
+            alt="logo"
             width={37}
             height={37}
           />
@@ -169,10 +170,7 @@ export default function Home() {
             <div className="cursor-pointer" onClick={termsDisclosure.onOpen}>
               이용약관
             </div>
-            <div
-              className="cursor-pointer"
-              onClick={exchangeRefundDisclosure.onOpen}
-            >
+            <div className="cursor-pointer" onClick={exchangeRefundDisclosure.onOpen}>
               교환 및 반품
             </div>
             <div
@@ -195,311 +193,141 @@ export default function Home() {
           </div>
         </div>
       </div>
+      {/* 푸터와 하단 네비게이션 사이 넉넉한 여백(흰색) */}
+      <div style={{ height: '32px', background: '#fff', width: '100%' }} />
 
       {/* 이용약관 모달 */}
       <Modal
-        className="h-full max-h-[75vh] overflow-y-auto "
-        size="2xl"
+        placement="bottom"
         isOpen={termsDisclosure.isOpen}
         onClose={termsDisclosure.onClose}
       >
         <ModalContent>
-          <ModalHeader>이용약관</ModalHeader>
-          <ModalBody>
+          <ModalHeader>이용약관 및 정책</ModalHeader>
+          <ModalBody className="max-h-[60vh] overflow-y-auto">
             <div className="text-sm">
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">■ 제1조 (목적)</h3>
-                <p className="mb-2">
-                  이 약관은 [(주)아트앤브릿지] (이하 "회사"라 합니다)가 운영하는
-                  웹 플랫폼(미술예술랭)에서 제공하는 미술 정보 콘텐츠, 작품 등록
-                  서비스 및 전시회 티켓 판매 서비스(이하 "서비스")를 이용함에
-                  있어 회사와 이용자 간의 권리, 의무 및 책임사항 등을 규정함을
-                  목적으로 합니다.
-                </p>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">■ 제2조 (정의)</h3>
-                <ol className="list-decimal pl-5 space-y-1">
-                  <li>
-                    "회원"이라 함은 이 약관에 동의하고 회사와 이용계약을
-                    체결하여 아이디(ID)를 부여받은 자를 말합니다.
-                  </li>
-                  <li>
-                    "비회원"이라 함은 회원 가입 없이 회사가 제공하는 서비스를
-                    이용하는 자를 말합니다.
-                  </li>
-                  <li>
-                    "작품 등록 서비스"라 함은 이용자가 미술 작품 정보를 플랫폼에
-                    업로드할 수 있도록 회사가 제공하는 기능을 말합니다.
-                  </li>
-                  <li>
-                    "전시 티켓 판매 서비스"라 함은 이용자가 전시회 티켓을
-                    온라인으로 구매할 수 있도록 회사가 제공하는 서비스를
-                    말합니다.
-                  </li>
-                  <li>
-                    "충전 서비스"란 유료 콘텐츠 이용을 위해 이용자가 회사에 선불
-                    방식으로 요금을 결제하는 행위를 말합니다.
-                  </li>
-                  <li>
-                    "포인트"란 회사가 정한 정책에 따라 회원이 유료로 구매하거나
-                    이벤트 등으로 지급받아 플랫폼 내 유료 서비스를 사용하는 데
-                    사용할 수 있는 결제 수단을 말합니다.
-                  </li>
-                </ol>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">
-                  ■ 제3조 (약관의 효력 및 변경)
-                </h3>
-                <ol className="list-decimal pl-5 space-y-1">
-                  <li>
-                    이 약관은 회사가 웹사이트에 게시하거나 기타의 방법으로
-                    회원에게 공지함으로써 효력을 발생합니다.
-                  </li>
-                  <li>
-                    회사는 관련 법령을 위배하지 않는 범위에서 이 약관을 개정할
-                    수 있으며, 개정된 약관은 제1항과 같은 방법으로 공지합니다.
-                  </li>
-                </ol>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">
-                  ■ 제4조 (서비스의 제공 및 변경)
-                </h3>
-                <ol className="list-decimal pl-5 space-y-1">
-                  <li>
-                    회사는 다음과 같은 서비스를 제공합니다. (1) 미술 정보 콘텐츠
-                    제공 (2) 미술 작품 등록 및 열람 기능 (3) 전시회 티켓 판매 및
-                    예매 (4) 유료 서비스 및 포인트 충전 기능
-                  </li>
-                  <li>
-                    회사는 서비스 제공을 위해 정기점검, 시스템 보완 등을 이유로
-                    일정 기간 서비스 제공을 중단할 수 있으며, 이 경우 사전에
-                    공지합니다.
-                  </li>
-                </ol>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">
-                  ■ 제4-2조 (큐레이션 서비스의 성격 및 범위)
-                </h3>
-                <ol className="list-decimal pl-5 space-y-1">
-                  <li>
-                    회사는 이용자가 등록한 미술 작품을 자체 큐레이션 정책에 따라
-                    검토, 선별 및 배치하는 유료 서비스를 제공합니다(이하
-                    "큐레이션 서비스").
-                  </li>
-                  <li>
-                    큐레이션 서비스는 단순한 작품 게재 기능을 넘어서, 다음과
-                    같은 콘텐츠 편집 및 기획 기능을 포함합니다.
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>
-                        플랫폼 내 주요 영역(메인, 추천섹션, 테마관 등)에의 작품
-                        배치
-                      </li>
-                      <li>전시 기획 및 작품 분류 큐레이션</li>
-                      <li>
-                        SNS, 뉴스레터, 배너 등 외부 마케팅 채널에의 노출 기회
-                        제공
-                      </li>
-                      <li>
-                        주간 큐레이터 픽, 전시 리뷰 연동 등 자체 기획 콘텐츠와의
-                        연계
-                      </li>
-                    </ul>
-                  </li>
-                  <li>
-                    큐레이션 서비스는 회사가 직접 제공하는 유료 콘텐츠 편집 및
-                    배치 서비스로 간주되며, 회원은 해당 서비스 이용 시 관련
-                    비용을 납부해야 합니다.
-                  </li>
-                  <li>
-                    큐레이션 서비스의 결제는 서비스 이용 신청 시점에 선결제
-                    방식으로 이루어지며, 이용자는 등록 후 서비스 제공 여부와
-                    무관하게 환불을 요청할 수 없습니다. 단, 회사의 귀책 사유로
-                    인한 미제공의 경우 환불이 가능합니다.
-                  </li>
-                  <li>
-                    회사는 큐레이션 기준 및 노출 방식에 대한 독자적인 판단
-                    권한을 가지며, 회원은 이에 대해 이의를 제기할 수 없습니다.
-                  </li>
-                </ol>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">
-                  ■ 제5조 (서비스 제공기간)
-                </h3>
-                <ol className="list-decimal pl-5 space-y-1">
-                  <li>
-                    서비스 제공기간은 고객이 결제한 시점부터 실제 서비스가
-                    종료되는 시점까지의 전체 기간(사전 예약 기간 + 실제 서비스
-                    제공 기간)을 의미합니다.
-                  </li>
-                  <li>
-                    서비스 제공기간은 결제일로부터 최대 1개월 이내로 제한되며,
-                    이를 초과하는 경우 가상계좌 결제수단의 이용이 제한될 수
-                    있습니다.
-                  </li>
-                  <li>
-                    서비스 제공기간이 1년을 초과할 경우 토스페이먼츠 등 특정
-                    결제수단의 이용이 제한됩니다. 회사는 해당 사실을 사전에
-                    고지합니다.
-                  </li>
-                  <li>
-                    이용자는 서비스 제공기간 내에 서비스를 이용 완료해야 하며,
-                    기간이 경과된 후에는 서비스 이용이 제한될 수 있습니다.
-                  </li>
-                </ol>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">
-                  ■ 제6조 (이용요금 및 결제)
-                </h3>
-                <ol className="list-decimal pl-5 space-y-1">
-                  <li>
-                    회사는 유료 서비스에 대해 별도의 요금을 부과하며, 요금은
-                    해당 서비스의 안내 페이지에 명시됩니다.
-                  </li>
-                  <li>
-                    결제는 신용카드, 계좌이체, 간편결제, 가상계좌 등 회사가
-                    제공하는 방법을 통해 이루어집니다.
-                  </li>
-                  <li>환불은 회사의 환불정책에 따릅니다.</li>
-                </ol>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">
-                  ■ 제7조 (포인트 결제 및 환불 정책)
-                </h3>
-                <ol className="list-decimal pl-5 space-y-1">
-                  <li>
-                    회원은 회사가 제공하는 결제 수단을 이용하여 포인트를
-                    충전하고, 해당 포인트로 유료 콘텐츠 및 서비스를 구매할 수
-                    있습니다.
-                  </li>
-                  <li>
-                    포인트는 개인 간 양도가 불가능하며, 회원 본인만 사용
-                    가능합니다.
-                  </li>
-                  <li>
-                    회원은 포인트 구매 후 미사용 포인트에 한하여 구매일로부터
-                    정해진 기간 내에 결제취소 및 환불을 요청할 수 있습니다.
-                    환불은 구매 시 사용한 결제수단으로만 진행됩니다.
-                  </li>
-                  <li>이미 사용한 포인트는 원칙적으로 환불이 불가능합니다.</li>
-                  <li>
-                    회사의 귀책사유로 인해 결제오류가 발생했거나, 서비스 제공이
-                    불가능하거나 중단된 경우, 회원은 해당 결제 건에 대해 환불을
-                    요구할 수 있습니다.
-                  </li>
-                  <li>
-                    환불 시점에 따라 결제금액의 일부가 공제되거나 환불이 제한될
-                    수 있으며, 이는 관련 법령 및 회사 정책에 따릅니다.
-                  </li>
-                </ol>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">
-                  ■ 제8조 (티켓 구매 및 환불 정책)
-                </h3>
-                <ol className="list-decimal pl-5 space-y-1">
-                  <li>
-                    이용자는 회사 플랫폼을 통해 미술관, 전시회, 예술 공연 등의
-                    티켓을 구매할 수 있으며, 결제 완료 시점에 해당 티켓의 전자
-                    이용권 또는 확인번호가 발급됩니다.
-                  </li>
-                  <li>
-                    티켓의 유효 기간, 사용 조건, 관람 가능 시간 등은 각 전시나
-                    공연 주최 측의 정책을 따르며, 회사는 사전에 이를 명시합니다.
-                  </li>
-                  <li>
-                    이용자는 결제일로부터 관람일 전까지 일정 기간 이내에는
-                    구매한 티켓에 대해 취소 또는 환불을 요청할 수 있으며, 이는
-                    각 전시/공연별 환불 정책 및 법령 기준에 따릅니다.
-                  </li>
-                  <li>
-                    일부 전시나 기획전은 환불이 제한될 수 있으며, 이 경우 회사는
-                    구매 전 해당 내용을 고지합니다.
-                  </li>
-                  <li>
-                    환불 요청 시, 티켓이 사용되지 않았음을 확인해야 하며, 환불은
-                    원 결제 수단으로 처리됩니다.
-                  </li>
-                  <li>
-                    회사 또는 주최 측의 귀책사유(예: 전시 취소, 일정 변경 등)로
-                    인해 관람이 불가한 경우, 전액 환불 또는 대체 티켓 제공 등의
-                    조치가 이루어집니다.
-                  </li>
-                </ol>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">■ 제9조 (회원의 의무)</h3>
-                <ol className="list-decimal pl-5 space-y-1">
-                  <li>
-                    회원은 회원가입 시 정확한 정보를 제공해야 하며, 허위 정보
-                    제공 시 서비스 이용이 제한될 수 있습니다.
-                  </li>
-                  <li>
-                    회원은 본 약관 및 관계 법령을 준수하여야 하며, 플랫폼의
-                    건전한 운영에 방해가 되는 행위를 해서는 안 됩니다.
-                  </li>
-                </ol>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">■ 제10조 (저작권)</h3>
-                <ol className="list-decimal pl-5 space-y-1">
-                  <li>
-                    이용자가 등록한 작품 및 콘텐츠에 대한 저작권은 해당
-                    이용자에게 있으며, 회사는 전시 및 홍보 목적으로 이를 사용할
-                    수 있습니다.
-                  </li>
-                  <li>
-                    회사가 작성한 저작물에 대한 저작권은 회사에 귀속됩니다.
-                  </li>
-                </ol>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">■ 제11조 (책임 제한)</h3>
-                <ol className="list-decimal pl-5 space-y-1">
-                  <li>
-                    회사는 이용자가 업로드한 콘텐츠에 대한 신뢰도, 진위 여부에
-                    대해 책임을 지지 않습니다.
-                  </li>
-                  <li>
-                    회사는 천재지변, 시스템 오류 등 회사의 통제 밖의 사유로 인해
-                    발생한 손해에 대해서는 책임을 지지 않습니다.
-                  </li>
-                </ol>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">■ 제12조 (분쟁 해결)</h3>
-                <ol className="list-decimal pl-5 space-y-1">
-                  <li>
-                    회사와 이용자 간 분쟁은 원칙적으로 협의를 통해 해결하며,
-                    협의가 이루어지지 않을 경우 민사소송법상의 관할 법원에
-                    제소할 수 있습니다.
-                  </li>
-                </ol>
-              </div>
-
-              <div className="mb-3">
-                <p className="font-semibold">
-                  부칙. 이 약관은 2025년 5월 12일부터 시행합니다.
-                </p>
-              </div>
+              <ol className="pl-2 space-y-4">
+                <li>
+                  <b>■ 제1조 (목적)</b>
+                  <p className="mt-1">
+                    이 약관은 [(주) 아트앤브릿지] (이하 "회사"라 합니다)가 운영하는 웹 플랫폼(미술예술랭)에서 제공하는 미술 정보 콘텐츠, 작품 등록 서비스 및 전시회 티켓 판매 서비스(이하 "서비스")를 이용함에 있어 회사와 이용자 간의 권리, 의무 및 책임사항 등을 규정함을 목적으로 합니다.
+                  </p>
+                </li>
+                <li>
+                  <b>■ 제2조 (정의)</b>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>"회원"이라 함은 이 약관에 동의하고 회사와 이용계약을 체결하여 아이디(ID)를 부여받은 자를 말합니다.</li>
+                    <li>"비회원"이라 함은 회원 가입 없이 회사가 제공하는 서비스를 이용하는 자를 말합니다.</li>
+                    <li>"작품 등록 서비스"라 함은 이용자가 미술 작품 정보를 플랫폼에 업로드할 수 있도록 회사가 제공하는 기능을 말합니다.</li>
+                    <li>"전시 티켓 판매 서비스"라 함은 이용자가 전시회 티켓을 온라인으로 구매할 수 있도록 회사가 제공하는 서비스를 말합니다.</li>
+                    <li>"충전 서비스"란 유료 콘텐츠 이용을 위해 이용자가 회사에 선불 방식으로 요금을 결제하는 행위를 말합니다.</li>
+                    <li>"작품 등록비"란 회사가 정한 정책에 따라 회원이 유료로 구매하거나 이벤트 등으로 지급받아 플랫폼 내 유료 서비스를 사용하는 데 사용할 수 있는 결제 수단을 말합니다.</li>
+                  </ul>
+                </li>
+                <li>
+                  <b>■ 제3조 (약관의 효력 및 변경)</b>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>이 약관은 회사가 웹사이트에 게시하거나 기타의 방법으로 회원에게 공지함으로써 효력을 발생합니다.</li>
+                    <li>회사는 관련 법령을 위배하지 않는 범위에서 이 약관을 개정할 수 있으며, 개정된 약관은 제1항과 같은 방법으로 공지합니다.</li>
+                  </ul>
+                </li>
+                <li>
+                  <b>■ 제4조 (서비스의 제공 및 변경)</b>
+                  <ul className="list-decimal pl-5 mt-1 space-y-1">
+                    <li>미술 정보 콘텐츠 제공</li>
+                    <li>미술 작품 등록 및 열람 기능</li>
+                    <li>전시회 티켓 판매 및 예매</li>
+                    <li>유료 서비스 및 작품 등록비 충전 기능</li>
+                  </ul>
+                  <p className="mt-1">회사는 서비스 제공을 위해 정기점검, 시스템 보완 등을 이유로 일정 기간 서비스 제공을 중단할 수 있으며, 이 경우 사전에 공지합니다.</p>
+                </li>
+                <li>
+                  <b>■ 제4-2조 (큐레이션 서비스의 성격 및 범위)</b>
+                  <p className="mt-1">회사는 이용자가 등록한 미술 작품을 자체 큐레이션 정책에 따라 검토, 선별 및 배치하는 유료 서비스를 제공합니다(이하 "큐레이션 서비스"). 큐레이션 서비스는 단순한 작품 게재 기능을 넘어서, 다음과 같은 콘텐츠 편집 및 기획 기능을 포함합니다.</p>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>플랫폼 내 주요 영역(메인, 추천섹션, 테마관 등)에의 작품 배치</li>
+                    <li>전시 기획 및 작품 분류 큐레이션</li>
+                    <li>SNS, 뉴스레터, 배너 등 외부 마케팅 채널에의 노출 기회 제공</li>
+                    <li>주간 큐레이터 픽, 전시 리뷰 연동 등 자체 기획 콘텐츠와의 연계</li>
+                  </ul>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>큐레이션 서비스는 회사가 직접 제공하는 유료 콘텐츠 편집 및 배치 서비스로 간주되며, 회원은 해당 서비스 이용 시 관련 비용을 납부해야 합니다.</li>
+                    <li>큐레이션 서비스의 결제는 서비스 이용 신청 시점에 선결제 방식으로 이루어지며, 이용자는 등록 후 서비스 제공 여부와 무관하게 환불을 요청할 수 없습니다. 단, 회사의 귀책 사유로 인한 미제공의 경우 환불이 가능합니다.</li>
+                    <li>회사는 큐레이션 기준 및 노출 방식에 대한 독자적인 판단 권한을 가지며, 회원은 이에 대해 이의를 제기할 수 없습니다.</li>
+                  </ul>
+                </li>
+                <li>
+                  <b>■ 제5조 (서비스 제공기간)</b>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>서비스 제공기간은 고객이 결제한 시점부터 실제 서비스가 종료되는 시점까지의 전체 기간(사전 예약 기간 + 실제 서비스 제공 기간)을 의미합니다.</li>
+                    <li>서비스 제공기간은 결제일로부터 최대 1개월 이내로 제한되며, 이를 초과하는 경우 가상계좌 결제수단의 이용이 제한될 수 있습니다.</li>
+                    <li>서비스 제공기간이 1년을 초과할 경우 토스페이먼츠 등 특정 결제수단의 이용이 제한됩니다. 회사는 해당 사실을 사전에 고지합니다.</li>
+                    <li>이용자는 서비스 제공기간 내에 서비스를 이용 완료해야 하며, 기간이 경과된 후에는 서비스 이용이 제한될 수 있습니다.</li>
+                  </ul>
+                </li>
+                <li>
+                  <b>■ 제6조 (이용요금 및 결제)</b>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>회사는 유료 서비스에 대해 별도의 요금을 부과하며, 요금은 해당 서비스의 안내 페이지에 명시됩니다.</li>
+                    <li>결제는 신용카드, 계좌이체, 간편결제, 가상계좌 등 회사가 제공하는 방법을 통해 이루어집니다.</li>
+                    <li>환불은 회사의 환불정책에 따릅니다.</li>
+                  </ul>
+                </li>
+                <li>
+                  <b>■ 제7조 (작품 등록비 결제 및 환불 정책)</b>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>회원은 회사가 제공하는 결제 수단을 이용하여 작품 등록비를 충전하고, 해당 등록비로 유료 콘텐츠 및 서비스를 구매할 수 있습니다.</li>
+                    <li>작품 등록비는 개인 간 양도가 불가능하며, 회원 본인만 사용 가능합니다.</li>
+                    <li>회원은 등록비 구매 후 미사용 금액에 한하여 구매일로부터 정해진 기간 내에 결제취소 및 환불을 요청할 수 있습니다. 환불은 구매 시 사용한 결제수단으로만 진행됩니다.</li>
+                    <li>이미 사용한 등록비는 원칙적으로 환불이 불가능합니다.</li>
+                    <li>회사의 귀책사유로 인해 결제오류가 발생했거나, 서비스 제공이 불가능하거나 중단된 경우, 회원은 해당 결제 건에 대해 환불을 요구할 수 있습니다.</li>
+                    <li>환불 시점에 따라 결제금액의 일부가 공제되거나 환불이 제한될 수 있으며, 이는 관련 법령 및 회사 정책에 따릅니다.</li>
+                  </ul>
+                </li>
+                <li>
+                  <b>■ 제8조 (티켓 구매 및 환불 정책)</b>
+                  <ol className="list-decimal pl-5 mt-1 space-y-1">
+                    <li>이용자는 회사 플랫폼을 통해 미술관, 전시회, 예술 공연 등의 티켓을 구매할 수 있으며, 결제 완료 시점에 해당 티켓의 전자 이용권 또는 확인번호가 발급됩니다.</li>
+                    <li>티켓의 유효 기간, 사용 조건, 관람 가능 시간 등은 각 전시나 공연 주최 측의 정책을 따르며, 회사는 이를 사전에 명시하거나 상품 상세 페이지에 고지합니다.</li>
+                    <li>티켓 환불은 전시 시작일 기준 7일 전까지 요청 시에만 가능하며, 전액 환불됩니다. 단, 관람일 기준 6일 전부터는 환불이 불가합니다.<br />예시) 전시 시작일이 6월 20일일 경우, 6월 13일 23:59까지 취소 시에만 환불 가능.</li>
+                    <li>
+                      다음의 경우에도 환불이 불가능합니다.
+                      <ul className="list-disc pl-5 mt-1 space-y-1">
+                        <li>전시 시작일 기준 6일 이내에 구매된 티켓</li>
+                        <li>전시 당일 이후의 취소 요청</li>
+                        <li>관람 당일의 무단 미입장</li>
+                        <li>개인 착오(날짜/시간/장소 오기입 포함), 교통 또는 기타 외부 요인에 의한 관람 불가</li>
+                      </ul>
+                    </li>
+                    <li>날짜 및 시간 변경은 전시 시작일 기준 7일 전까지 1회에 한하여 가능하며, 예매자 본인의 요청으로만 처리됩니다. 타인 명의로의 변경은 허용되지 않습니다.</li>
+                    <li>환불 신청은 [마이페이지 - 고객센터] 또는 카카오채널 '아트앤브릿지'를 통해 접수 가능하며, 결제 수단에 따라 영업일 기준 3~7일 내 환불 처리됩니다. 단, 신용카드 결제의 경우 카드사 사정에 따라 환불 시점이 상이할 수 있습니다.</li>
+                    <li>본 조항은 "전자상거래 등에서의 소비자 보호에 관한 법률" 제17조 제2항 및 같은 법 시행령 제21조에 근거하여, 공연/전시 등 특정 일시가 정해진 서비스에 해당하므로, 회사는 개별적인 환불 기준을 정하고 이를 명확히 고지하며 이에 따른 운영을 합니다.</li>
+                    <li>위 환불 정책은 "교환 및 환불 안내" 별도 항목에도 고지되며, 이용자는 서비스 이용 전 해당 내용을 숙지해야 할 책임이 있습니다.</li>
+                  </ol>
+                </li>
+                <li>
+                  <b>■ 제9조 (법적 효력 강화를 위한 고지 및 이용자 책임)</b>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>본 플랫폼의 티켓 예매 서비스는 "전자상거래 등에서의 소비자보호에 관한 법률" 제17조 제2항 제5호에 따라, 공연·전시 등 특정 일시에 제공되는 서비스로서 청약철회가 제한됩니다.</li>
+                    <li>회원은 환불 불가 조건에 대해 충분히 인지하고 예매를 진행해야 하며, 동의 여부는 결제 시점에 시스템상 별도 확인 절차를 통해 확보됩니다.</li>
+                    <li>회사는 티켓 구매 및 환불 조건, 전시 주최 측 정책을 사전에 고지하며, 이용자는 이를 숙지할 의무가 있습니다.</li>
+                  </ul>
+                </li>
+                <li>
+                  <b>■ 제10조 (면책 조항)</b>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>회사는 이용자의 귀책사유로 인한 서비스 이용 장애에 대해 책임을 지지 않습니다.</li>
+                    <li>회사는 천재지변, 전시 주최 측의 사정, 기술적 장애 등으로 인한 서비스 중단에 대해서는 사전 고지 후 책임을 면합니다.</li>
+                  </ul>
+                </li>
+                <li>
+                  <b>■ 제11조 (분쟁 해결 및 관할)</b>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>회사는 이용자의 정당한 이의제기를 신속히 처리하기 위해 고객센터 및 공식 연락채널을 운영합니다.</li>
+                    <li>분쟁 발생 시, 회사와 이용자는 원활한 해결을 위해 성실히 협의하며, 협의가 어려운 경우 민사소송법에 따라 이용자의 주소지를 우선 관할로 하되, 주소 불분명 시 회사 본사 소재지를 관할하는 법원으로 합니다.</li>
+                  </ul>
+                </li>
+              </ol>
             </div>
           </ModalBody>
           <ModalFooter>
@@ -512,63 +340,77 @@ export default function Home() {
 
       {/* 교환 및 반품 모달 */}
       <Modal
+        placement="bottom"
         isOpen={exchangeRefundDisclosure.isOpen}
         onClose={exchangeRefundDisclosure.onClose}
       >
         <ModalContent>
           <ModalHeader>교환 및 환불 안내</ModalHeader>
-          <ModalBody>
+          <ModalBody className="max-h-[60vh] overflow-y-auto">
             <div className="text-sm">
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">1. 환불 가능 기간</h3>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>관람 7일 전까지 취소 시: 전액 환불 가능</li>
-                  <li>관람 당일 취소: 환불 불가</li>
-                </ul>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">2. 환불 수수료</h3>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>관람 7일 전까지: 100% 환불</li>
-                  <li>관람 2일 전 ~ 1일 전: 환불 불가</li>
-                  <li>관람 당일 및 이후: 환불 불가</li>
-                </ul>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">3. 교환/변경</h3>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>
-                    날짜 및 시간 변경은 관람 7일 전까지 1회에 한하여 가능합니다.
-                  </li>
-                  <li>
-                    예매자 본인의 요청에 한해 처리되며, 타인 명의로 변경은
-                    불가합니다.
-                  </li>
-                </ul>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">4. 환불 방법</h3>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>마이페이지-고객센터 혹은 카카오채널 '아트앤브릿지' 를 통해 환불신청 가능합니다.</li>
-                  <li>결제 수단에 따라 영업일 기준 3~7일 내 환불됩니다.</li>
-                  <li>
-                    신용카드 결제 시, 카드사 사정에 따라 환불 일자가 상이할 수
-                    있습니다.
-                  </li>
-                </ul>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold mb-1">5. 환불 불가 항목</h3>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>본인의 착오로 인한 예매 (날짜/시간 착오 포함)</li>
-                  <li>무단 미입장</li>
-                  <li>외부 요인 (교통, 개인 사정 등)에 의한 취소</li>
-                </ul>
-              </div>
+              <ul className="list-disc pl-5 space-y-3">
+                <li>
+                  <b>1. 환불 가능 기간 및 기준</b>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>관람일 7일 전(포함)까지 취소 요청 시: 전액 환불</li>
+                    <li>관람일 6일 전 ~ 당일 및 이후 취소 시: 환불 불가</li>
+                    <li>단, 예매일과 전시/공연일 사이가 7일 미만일 경우, 예매 즉시 환불 불가 규정이 적용됩니다.<br />예시: 전시일이 6월 21~22일이며, 6월 20일 예매 시 환불은 불가합니다.</li>
+                  </ul>
+                </li>
+                <li>
+                  <b>2. 환불 수수료</b>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>관람일 7일 전까지: 100% 환불</li>
+                    <li>관람일 6일 전부터 당일 및 이후: 환불 불가</li>
+                  </ul>
+                </li>
+                <li>
+                  <b>3. 교환 및 일정 변경</b>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>관람일 7일 전(포함)까지, 1회에 한하여 날짜 및 시간 변경 가능</li>
+                    <li>변경 요청은 예매자 본인에 한하여 가능하며, 타인 명의로의 양도·변경은 불가</li>
+                    <li>일정 변경은 고객센터 또는 카카오채널 '아트앤브릿지'를 통해 접수해야 합니다</li>
+                  </ul>
+                </li>
+                <li>
+                  <b>4. 환불 신청 방법</b>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>마이페이지 내 고객센터 또는 카카오채널 '아트앤브릿지'로 접수</li>
+                    <li>결제 수단에 따라 영업일 기준 3~7일 내 환불 처리</li>
+                    <li>신용카드 결제 시, 카드사 정책에 따라 환불 시점은 상이할 수 있음</li>
+                  </ul>
+                </li>
+                <li>
+                  <b>5. 환불 불가 항목 (아래 사유는 환불 사유로 인정되지 않음)</b>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>관람일 6일 전부터 당일 이후의 취소 요청</li>
+                    <li>예매자의 착오 (관람 날짜·시간 착오 포함)</li>
+                    <li>개인 사정(출장, 건강, 교통 문제 등)</li>
+                    <li>무단 미입장</li>
+                    <li>현장 방문 후 단순 변심</li>
+                    <li>기상 악화, 질병 등의 외부 요인(단, 천재지변 등 예외 사유는 내부 운영 기준에 따름)</li>
+                    <li>이벤트 등을 통해 무료로 지급된 티켓은, 티켓 금액이 표시되어 있더라도 실제 결제가 이루어지지 않았기 때문에 환불 및 취소가 불가합니다.<br />이는 당첨자 또는 제공 대상자에게 무상으로 지급된 혜택으로 간주되며, 유료 서비스가 아니므로 '전자상거래법'상 청약철회 대상에 해당하지 않습니다.</li>
+                  </ul>
+                </li>
+                <li>
+                  <b>6. 예외적 환불 가능 사유</b>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>입원 등 긴급 의료 사유 (의사의 진단서 또는 입원확인서 제출)</li>
+                    <li>직계가족의 사망 (사망진단서 및 가족관계증명서)</li>
+                    <li>국가적 재난에 따른 이동 제한 명령 등</li>
+                  </ul>
+                  <p className="mt-1">단, 주최 측의 판단에 따라 전액/일부 환불 또는 거절될 수 있습니다.</p>
+                </li>
+                <li>
+                  <b>7. 법률 고지 및 분쟁 예방 안내</b>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    <li>본 티켓은 '전자상거래법 제17조 제2항 3호' 및 '소비자분쟁해결기준'의 "공연, 전시 등 특정 일시에 제공되는 서비스"로 분류되어, 청약철회가 제한될 수 있습니다.</li>
+                    <li>예매자는 본 규정에 동의함으로써, 청약철회 불가 조건 및 환불 불가 항목에 대해 충분히 안내받았음을 인정합니다.</li>
+                    <li>모든 분쟁은 대한민국 민법 및 소비자보호 관련 법령에 따라 해결되며, 주최 측과의 사전 조율 및 협의가 우선됩니다.</li>
+                  </ul>
+                  <p className="mt-1">✅ 문의 및 요청: 고객센터 또는 카카오톡 채널 '아트앤브릿지'</p>
+                </li>
+              </ul>
             </div>
           </ModalBody>
           <ModalFooter>

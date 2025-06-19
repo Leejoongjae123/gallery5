@@ -51,18 +51,19 @@ export default function page({params}) {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-white flex items-center w-[100%] justify-between"
+        className="bg-white flex items-center w-full h-12"
       >
-        <Button
-          isIconOnly
-          variant="light"
-          className="mr-2"
-          onPress={() => router.back()}
-        >
-          <FaArrowLeft className="text-xl" />
-        </Button>
-        <h2 className="text-lg font-bold text-center flex-grow">매거진</h2>
-        
+        <div className="w-12 flex justify-start items-center">
+          <Button
+            isIconOnly
+            variant="light"
+            onPress={() => router.back()}
+          >
+            <FaArrowLeft className="text-xl" />
+          </Button>
+        </div>
+        <h2 className="flex-1 text-lg font-bold text-center">매거진</h2>
+        <div className="w-12" />
       </motion.div>
       <motion.div 
         initial={{ opacity: 0 }}
@@ -90,8 +91,15 @@ export default function page({params}) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.7 }}
-          className="text-[15px] font-medium text-gray-500"
+          className="text-[15px] font-medium text-gray-500 flex items-center"
         >
+          {magazine.subtitle === '전시나그네' && (
+            <a href="https://www.instagram.com/exhibition_wanderer/" target="_blank" rel="noopener noreferrer">
+              <span className="inline-block w-7 h-7 rounded-full bg-white shadow-lg mr-1 flex items-center justify-center">
+                <img src="https://teaelrzxuigiocnukwha.supabase.co/storage/v1/object/public/notification//imgi_1_272626601_246980864252824_1484718971353683993_n.jpg" alt="author" className="w-5 h-5 rounded-full object-cover" style={{margin: '2px'}} />
+              </span>
+            </a>
+          )}
           {magazine.subtitle}
         </motion.div>
         <motion.div 

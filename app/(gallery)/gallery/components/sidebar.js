@@ -12,6 +12,7 @@ export default function Sidebar({ onItemClick }) {
     { icon: "lucide:layout-dashboard", label: "마이페이지", href: "/gallery" },
     { icon: "lucide:newspaper", label: "신규전시등록", href: "/gallery/exhibition" },
     { icon: "lucide:image", label: "소식등록", href: "/gallery/news" },
+    { icon: "lucide:users", label: "관람객 관리", href: "/gallery/visitor" },
     { icon: "lucide:log-out", label: "로그아웃", href: "" },
     { icon: "lucide:users", label: "관리자 페이지로 이동", href: "/admin" },
   ];

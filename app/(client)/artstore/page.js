@@ -338,8 +338,8 @@ function ExhibitionListContent() {
   };
   console.log("popularExhibitions", popularExhibitions);
   return (
-    <div className="flex flex-col items-center justify-center">
-      <div className="bg-white flex items-center w-[90%] justify-between">
+    <div className="flex flex-col items-center justify-center w-full max-w-[430px] mx-auto bg-white min-h-screen pb-24">
+      <div className="bg-white flex items-center w-[90%] justify-between mt-4 mb-2">
         <Button
           isIconOnly
           variant="light"
@@ -352,11 +352,16 @@ function ExhibitionListContent() {
         <div className="w-10"></div>
       </div>
 
-      {/* 가로 방향 캐러셀 추가 */}
-      <TopArts />
-      <div className="w-[90%] mt-4 mb-2 ">
-        <div className="flex justify-between items-center mb-1">
-          <h3 className="text-[18px] font-bold">아티스트</h3>
+      {/* 상단 카테고리(추천상품~기타)와 타이틀 사이 여백 추가 */}
+      <div className="mt-4" />
+      <div className="w-full px-4 mb-6 flex flex-col items-center justify-center">
+        <div className="w-full flex flex-col items-center">
+          <TopArts />
+        </div>
+      </div>
+      <div className="w-[90%] mt-6 mb-6 flex flex-col items-center">
+        <div className="flex justify-between items-center mb-3 w-full">
+          <h3 className="text-[18px] font-bold text-left">아티스트</h3>
           <div
             onClick={() => router.push("/artists")}
             className="flex items-center gap-2 hover:cursor-pointer"
@@ -366,19 +371,21 @@ function ExhibitionListContent() {
           </div>
         </div>
 
-        <MiddleArtists
-          exhibitions={popularExhibitions}
-          user={user}
-          bookmarks={bookmarks}
-          toggleBookmark={toggleBookmark}
-          isBookmarked={isBookmarked}
-        />
+        <div className="w-full px-1 py-2 flex flex-col items-center">
+          <MiddleArtists
+            exhibitions={popularExhibitions}
+            user={user}
+            bookmarks={bookmarks}
+            toggleBookmark={toggleBookmark}
+            isBookmarked={isBookmarked}
+          />
+        </div>
       </div>
 
-      <Divider orientation="horizontal" className="w-[90%] my-4 bg-[#eee]" />
+      <Divider orientation="horizontal" className="w-[90%] my-8 bg-[#eee]" />
       <div className="w-[90%] flex flex-col justify-center items-center mb-24">
-        <div className="w-full flex justify-between items-center">
-          <h1 className="text-[18px] font-bold">Top of Week</h1>
+        <div className="w-full flex justify-between items-center mb-3">
+          <h1 className="text-[18px] font-bold text-left">Top of Week</h1>
           <div
             onClick={() => router.push("/artstore")}
             className="flex items-center gap-2 hover:cursor-pointer"
@@ -388,7 +395,9 @@ function ExhibitionListContent() {
           </div>
         </div>
 
-        <LowerCarousel />
+        <div className="w-full px-1 py-2 flex flex-col items-center">
+          <LowerCarousel />
+        </div>
       </div>
     </div>
   );

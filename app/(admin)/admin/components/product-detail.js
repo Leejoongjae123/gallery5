@@ -116,36 +116,66 @@ export function ProductDetail({
     });
   };
 
+  // 브라우저에서 WebP 변환 함수 (최대 1200px 리사이즈 적용)
+  async function fileToWebP(file) {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      const reader = new FileReader();
+      reader.onload = (e) => { img.src = e.target.result; };
+      img.onload = () => {
+        // 최대 크기 제한
+        const maxSize = 1200;
+        let targetW = img.width;
+        let targetH = img.height;
+        if (img.width > maxSize || img.height > maxSize) {
+          if (img.width > img.height) {
+            targetW = maxSize;
+            targetH = Math.round(img.height * (maxSize / img.width));
+          } else {
+            targetH = maxSize;
+            targetW = Math.round(img.width * (maxSize / img.height));
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+        canvas.toBlob(
+          (blob) => { resolve(blob); },
+          'image/webp',
+          0.8 // 압축률(0~1)
+        );
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   // 이미지 업로드 함수
   const uploadImages = async () => {
     if (imageFiles.length === 0) return null;
-
     try {
       setIsUploading(true);
       const uploadedUrls = [...(editedProduct.image || [])]; // 기존 이미지 URL 유지
-
       // 새 이미지 파일 업로드
       for (const file of imageFiles) {
-        // 고유한 파일명 생성
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${uuidv4()}.${fileExt}`;
+        // WebP 변환
+        const webpBlob = await fileToWebP(file);
+        const fileName = `${uuidv4()}.webp`;
         const filePath = `product/${fileName}`;
-
         // Supabase Storage에 이미지 업로드
         const { data, error } = await supabase.storage
           .from("product")
-          .upload(filePath, file);
-
+          .upload(filePath, webpBlob, {
+            contentType: 'image/webp',
+          });
         if (error) throw error;
-
         // 공개 URL 가져오기
         const {
           data: { publicUrl },
         } = supabase.storage.from("product").getPublicUrl(filePath);
-
         uploadedUrls.push(publicUrl);
       }
-
       return uploadedUrls;
     } catch (error) {
       console.log("이미지 업로드 오류:", error);

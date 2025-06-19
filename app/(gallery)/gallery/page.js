@@ -4,7 +4,7 @@ import { HiUsers, HiPhotograph, HiClock, HiThumbUp } from "react-icons/hi";
 import { GalleryList } from "./components/gallery-list";
 import { GalleryDetail } from "./components/gallery-detail";
 import { createClient } from "@/utils/supabase/client";
-import { addToast, Tabs, Tab, Card, Image, Spinner } from "@heroui/react";
+import { addToast, Tabs, Tab, Card, Spinner } from "@heroui/react";
 
 // 통계 카드 컴포넌트
 const StatCard = ({ title, value, icon, color }) => (
@@ -303,8 +303,6 @@ export default function AdminDashboard() {
   return (
     <div className="w-full h-full flex flex-col gap-4 py-20">
       <div className="w-full max-w-7xl mx-auto space-y-6">
-        <h1 className="text-2xl font-bold">갤러리 관리</h1>
-
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <Spinner color="primary" />

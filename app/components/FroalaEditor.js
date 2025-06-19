@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react';
-import FroalaEditor from 'react-froala-wysiwyg';
+import dynamic from 'next/dynamic';
 import 'froala-editor/css/froala_style.min.css';
 import 'froala-editor/css/froala_editor.pkgd.min.css';
 import 'froala-editor/js/plugins.pkgd.min.js';
@@ -19,6 +19,35 @@ import 'froala-editor/js/plugins/align.min.js';
 import 'froala-editor/js/plugins/quote.min.js';
 import 'froala-editor/js/plugins/code_view.min.js';
 import 'froala-editor/js/languages/ko.js';
+
+const FroalaEditor = dynamic(
+  async () => {
+    const mod = await import('react-froala-wysiwyg');
+    await import('froala-editor/css/froala_style.min.css');
+    await import('froala-editor/css/froala_editor.pkgd.min.css');
+    await import('froala-editor/js/plugins.pkgd.min.js');
+    await import('froala-editor/js/plugins/font_size.min.js');
+    await import('froala-editor/js/plugins/image.min.js');
+    await import('froala-editor/js/plugins/colors.min.js');
+    await import('froala-editor/js/plugins/emoticons.min.js');
+    await import('froala-editor/js/plugins/line_height.min.js');
+    await import('froala-editor/js/plugins/file.min.js');
+    await import('froala-editor/js/plugins/table.min.js');
+    await import('froala-editor/js/plugins/video.min.js');
+    await import('froala-editor/js/plugins/link.min.js');
+    await import('froala-editor/js/plugins/lists.min.js');
+    await import('froala-editor/js/plugins/paragraph_format.min.js');
+    await import('froala-editor/js/plugins/align.min.js');
+    await import('froala-editor/js/plugins/quote.min.js');
+    await import('froala-editor/js/plugins/code_view.min.js');
+    await import('froala-editor/js/languages/ko.js');
+    return mod.default;
+  },
+  {
+    ssr: false,
+    loading: () => <p>에디터 로딩 중...</p>
+  }
+);
 
 const FroalaEditorComponent = ({ 
   value, 

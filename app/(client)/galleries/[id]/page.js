@@ -462,12 +462,12 @@ export default function App() {
             <h2 className="text-lg font-medium"></h2>
           </div>
 
-          {/* Hero Image Section */}
-          <div className="relative w-full h-64">
+          {/* Hero Image Section (object-contain, 40vh, overflow-hidden) */}
+          <div className="relative w-full h-[40vh] mx-auto overflow-hidden">
             <img
               src={gallery?.thumbnail}
-              alt="Restaurant"
-              className="w-full h-full object-cover"
+              alt="갤러리 이미지"
+              className="object-contain w-full h-full"
             />
             <div className="absolute bottom-4 right-4 flex gap-2">
               <div
@@ -574,7 +574,7 @@ export default function App() {
                 >
                   <Card className="my-4 mx-2 p-2">
                     <CardBody>
-                      <h3 className="text-lg font-bold mb-2">시설 안내</h3>
+                      <h3 className="text-lg font-bold mb-2">추가정보</h3>
                       <div 
                         className="fr-element text-[15px] sm:text-[14px] md:text-base whitespace-pre-line"
                         style={{ 

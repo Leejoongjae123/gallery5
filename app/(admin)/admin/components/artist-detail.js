@@ -128,32 +128,62 @@ export function ArtistDetail({
     reader.readAsDataURL(file);
   };
 
+  // 브라우저에서 WebP 변환 함수 (최대 1200px 리사이즈 적용)
+  async function fileToWebP(file) {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      const reader = new FileReader();
+      reader.onload = (e) => { img.src = e.target.result; };
+      img.onload = () => {
+        // 최대 크기 제한
+        const maxSize = 1200;
+        let targetW = img.width;
+        let targetH = img.height;
+        if (img.width > maxSize || img.height > maxSize) {
+          if (img.width > img.height) {
+            targetW = maxSize;
+            targetH = Math.round(img.height * (maxSize / img.width));
+          } else {
+            targetH = maxSize;
+            targetW = Math.round(img.width * (maxSize / img.height));
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+        canvas.toBlob(
+          (blob) => { resolve(blob); },
+          'image/webp',
+          0.8 // 압축률(0~1)
+        );
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   const uploadImage = async () => {
     if (!imageFile) return null;
-    
     try {
       setIsUploading(true);
-      
-      // 고유한 파일명 생성
-      const fileExt = imageFile.name.split(".").pop();
-      const fileName = `${uuidv4()}.${fileExt}`;
+      const fileName = `${uuidv4()}.webp`;
       const filePath = `artist/${fileName}`;
-      
-      // Supabase Storage에 파일 업로드
+      // WebP 변환
+      const webpBlob = await fileToWebP(imageFile);
+      // Supabase Storage에 업로드
       const { data, error } = await supabase.storage
         .from("avatars")
-        .upload(filePath, imageFile, {
+        .upload(filePath, webpBlob, {
+          contentType: 'image/webp',
           cacheControl: '3600',
           upsert: false
         });
-      
       if (error) throw error;
-      
       // 공개 URL 가져오기
       const { data: { publicUrl } } = supabase.storage
         .from("avatars")
         .getPublicUrl(filePath);
-      
       return publicUrl;
     } catch (error) {
       console.error("이미지 업로드 오류:", error);
@@ -188,6 +218,13 @@ export function ArtistDetail({
         }
       }
       
+      // 등록 크레딧 자동 설정 로직 추가
+      let artistCredit = editedArtist.artist_credit || 0;
+      // 미승인(false) → 승인(true)로 바뀌는 경우에만 20으로 설정
+      if (!artist.isArtistApproval && editedArtist.isArtistApproval) {
+        artistCredit = 20;
+      }
+
       // 업데이트할 데이터 준비
       const updateData = {
         isArtist: true,
@@ -197,7 +234,7 @@ export function ArtistDetail({
         artist_birth: editedArtist.artist_birth || "",
         artist_genre: editedArtist.artist_genre || "",
         artist_proof: editedArtist.artist_proof || "",
-        artist_credit: editedArtist.artist_credit || 0,
+        artist_credit: artistCredit,
         isArtistApproval: editedArtist.isArtistApproval || false,
         avatar_url: avatar_url || "", // 업로드된 이미지 URL 추가
       };
@@ -345,7 +382,37 @@ export function ArtistDetail({
 
       <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
 
-        
+        {/* 프로필 이미지 업로드 및 미리보기 */}
+        <div className="col-span-2 md:col-span-1 flex flex-col items-center justify-center">
+          <label className="block text-sm font-medium mb-2">프로필 이미지</label>
+          <div className="relative w-32 h-32 mb-2">
+            <img
+              src={previewUrl || "/noimage.jpg"}
+              alt="프로필 이미지 미리보기"
+              className="object-cover rounded-full w-32 h-32 border"
+              onClick={() => fileInputRef.current && fileInputRef.current.click()}
+              style={{ cursor: 'pointer' }}
+            />
+            {previewUrl && (
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="absolute top-1 right-1 bg-white rounded-full p-1 border shadow"
+                title="이미지 삭제"
+              >
+                <Icon icon="lucide:x" className="text-lg text-gray-500" />
+              </button>
+            )}
+          </div>
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={handleImageChange}
+          />
+          <span className="text-xs text-gray-400">이미지를 클릭해 변경하세요 (최대 5MB)</span>
+        </div>
 
         <Input
           className="col-span-2 md:col-span-1"
@@ -354,7 +421,7 @@ export function ArtistDetail({
           value={editedArtist.artist_name || ""}
           onChange={handleInputChange}
           // isRequired={true}
-          isDisabled={true}
+          isDisabled={false}
         />
 
         <Input

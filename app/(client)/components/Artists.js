@@ -11,6 +11,12 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
+function getWebpImageUrl(url) {
+  if (!url) return "/noimage.jpg";
+  if (url.endsWith(".webp")) return url;
+  return url.replace(/\.(jpg|jpeg|png)$/i, ".webp");
+}
+
 const Artists = () => {
   const router = useRouter();
   const [artists, setArtists] = useState([]);
@@ -64,6 +70,7 @@ const Artists = () => {
           .from("profiles")
           .select("*")
           .eq("isArtist", true)
+          .eq("isArtistApproval", true)
           .order("created_at", { ascending: false });
 
         if (artistsError) throw artistsError;
@@ -73,11 +80,10 @@ const Artists = () => {
         const { data: worksData, error: worksError } = await supabase
           .from("product")
           .select("*, artist_id(*)")
-          .order("created_at", { ascending: false })
-          .limit(5);
+          .order("created_at", { ascending: false });
 
         if (worksError) throw worksError;
-        setWorks(worksData);
+        setWorks((worksData || []).filter(item => item.artist_id?.isArtistApproval === true));
 
         // 추천 작품 5개 가져오기
         const { data: recommendedData, error: recommendedError } =
@@ -88,7 +94,7 @@ const Artists = () => {
             .limit(5);
 
         if (recommendedError) throw recommendedError;
-        setRecommendedWorks(recommendedData);
+        setRecommendedWorks((recommendedData || []).filter(item => item.artist_id?.isArtistApproval === true));
 
         setIsLoading(false);
       } catch (error) {
@@ -161,12 +167,12 @@ const Artists = () => {
             src={artist.avatar_url || "/noimage.jpg"}
             alt="artist"
             fill
-            className="object-cover rounded-lg w-full h-full"
+            className="object-cover rounded-lg w-full h-full bg-white"
             draggable="false"
           />
         </div>
         <CardBody className="flex flex-col justify-between p-3">
-          <h3 className="text-sm font-bold w-full text-center">
+          <h3 className="text-xs font-bold w-full text-center">
             {artist.artist_name}
           </h3>
         </CardBody>
@@ -198,10 +204,10 @@ const Artists = () => {
             <>
               <div className="w-[150px] aspect-[2/3] relative">
                 <Image
-                  src={work.image[0] || "/noimage.jpg"}
+                  src={getWebpImageUrl(work.image[0])}
                   alt="works"
                   fill
-                  className="object-cover rounded-lg"
+                  className="object-contain rounded-lg bg-white"
                   draggable="false"
                 />
               </div>
@@ -220,10 +226,10 @@ const Artists = () => {
           ) : (
             <>
               <Image
-                src={work.image[0] || "/noimage.jpg"}
+                src={getWebpImageUrl(work.image[0])}
                 alt="bestofweek"
                 fill
-                className="object-cover rounded-lg"
+                className="object-contain rounded-lg bg-white"
                 draggable="false"
               />
             </>
@@ -231,7 +237,7 @@ const Artists = () => {
         </div>
         {size !== "normal" && (
           <div className="flex flex-col justify-between p-3">
-            <h3 className="text-[14px] w-full text-start">{work.name}</h3>
+            <h3 className="text-xs w-full text-start">{work.name}</h3>
             <p className="text-[12px] text-start font-bold">
               ₩{work.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
             </p>
@@ -318,23 +324,14 @@ const Artists = () => {
         </div>
       </div>
       {/* 아티스트 가로방향 캐러샐*/}
-      <div className="w-full relative overflow-hidden mt-4">
-        <SliderNavigation 
-          prevHandler={() => goPrev(artistSliderRef)}
-          nextHandler={() => goNext(artistSliderRef)}
-        />
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="slider-container"
-        >
-          <Slider ref={artistSliderRef} {...sliderSettings}>
-            {artists.map((artist, index) => (
-              <ArtistCard key={artist.id} artist={artist} index={index} />
-            ))}
-          </Slider>
-        </motion.div>
+      <div className="w-full overflow-x-auto scrollbar-hide py-2">
+        <div className="flex flex-row gap-4">
+          {artists.map((artist, index) => (
+            <div key={artist.id} className="min-w-[100px]">
+              <ArtistCard artist={artist} index={index} />
+            </div>
+          ))}
+        </div>
       </div>
       
       <div className="flex flex-row items-center justify-between w-full mt-8">
@@ -350,23 +347,14 @@ const Artists = () => {
         </div>
       </div>
       {/* 작품 가로방향 캐러샐 */}
-      <div className="w-full relative overflow-hidden mt-4">
-        <SliderNavigation 
-          prevHandler={() => goPrev(workSliderRef)}
-          nextHandler={() => goNext(workSliderRef)}
-        />
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="slider-container"
-        >
-          <Slider ref={workSliderRef} {...sliderSettings}>
-            {works.map((work, index) => (
-              <WorkCard key={work.id} work={work} index={index} size="normal" />
-            ))}
-          </Slider>
-        </motion.div>
+      <div className="w-full overflow-x-auto scrollbar-hide py-2">
+        <div className="flex flex-row gap-4">
+          {works.map((work, index) => (
+            <div key={work.id} className="min-w-[150px]">
+              <WorkCard work={work} index={index} size="normal" />
+            </div>
+          ))}
+        </div>
       </div>
       
       {/* Top of Week 가로방향 캐러샐 */}
@@ -382,23 +370,14 @@ const Artists = () => {
           <FaChevronRight className="text-[#007AFF] text-sm font-bold" />
         </div>
       </div>
-      <div className="w-full relative overflow-hidden mt-4">
-        <SliderNavigation 
-          prevHandler={() => goPrev(recommendedSliderRef)}
-          nextHandler={() => goNext(recommendedSliderRef)}
-        />
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="slider-container"
-        >
-          <Slider ref={recommendedSliderRef} {...sliderSettings}>
-            {recommendedWorks.map((work, index) => (
-              <WorkCard key={work.id} work={work} index={index} size="small" />
-            ))}
-          </Slider>
-        </motion.div>
+      <div className="w-full overflow-x-auto scrollbar-hide py-2">
+        <div className="flex flex-row gap-4">
+          {recommendedWorks.map((work, index) => (
+            <div key={work.id} className="min-w-[150px]">
+              <WorkCard work={work} index={index} size="small" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap');
+/* @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap'); */
 
 @tailwind base;
 @tailwind components;
@@ -9,10 +9,7 @@ html, body {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
-}
-
-*{
-    font-family: 'Noto Sans KR', sans-serif;
+  background: linear-gradient(180deg, #f5f6fa 0%, #e5e7eb 60%, #d1d5db 100%) !important;
 }
 
 /* 모바일 앱 프레임을 위한 스타일 */
@@ -78,4 +75,67 @@ html, body {
 
 .fr-element {
   width: 100%      !important; /* 본문 내용도 컨테이너 폭에 맞추기 */
+}
+
+.no-copy-bg {
+  position: relative;
+  z-index: 0;
+}
+.no-copy-bg::before {
+  content: "";
+  display: none;
+}
+.no-copy-bg::after {
+  content:
+    '복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE   \A'
+    '복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE   \A'
+    '복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE   \A'
+    '복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE   \A'
+    '복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE   \A'
+    '복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE   \A'
+    '복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE   \A'
+    '복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE   \A'
+    '복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE   \A'
+    '복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE      복제금지 · ARTBRIDGE   ';
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  color: rgba(0,0,0,0.08);
+  font-size: 3vw;
+  font-weight: 700;
+  z-index: 1001;
+  pointer-events: none;
+  user-select: none;
+  white-space: pre;
+  text-align: center;
+  transform: rotate(-20deg);
+  line-height: 5vw;
+  letter-spacing: 0.4em;
+  display: block;
+  padding-top: 0;
+}
+
+@media (max-width: 600px) {
+  .no-copy-bg::after {
+    font-size: 5vw;
+    line-height: 7vw;
+    letter-spacing: 0.2em;
+    content:
+      '복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   \A'
+      '복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   \A'
+      '복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   \A'
+      '복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   \A'
+      '복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   \A'
+      '복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   \A'
+      '복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   \A'
+      '복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   \A'
+      '복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   \A'
+      '복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   \A'
+      '복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   \A'
+      '복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   \A'
+      '복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   \A'
+      '복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   \A'
+      '복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   복제금지 · ARTBRIDGE   ';
+  }
 }

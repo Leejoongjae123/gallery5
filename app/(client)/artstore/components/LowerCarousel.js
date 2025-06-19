@@ -9,6 +9,12 @@ import "slick-carousel/slick/slick-theme.css";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
 
+function getWebpImageUrl(url) {
+  if (!url) return "/noimage.jpg";
+  if (url.endsWith(".webp")) return url;
+  return url.replace(/\.(jpg|jpeg|png)$/i, ".webp");
+}
+
 export default function LowerCarousel() {
   const router = useRouter();
   const [artItems, setArtItems] = useState([]);
@@ -114,12 +120,11 @@ export default function LowerCarousel() {
   }
 
   return (
-    <div className="w-full overflow-hidden my-4">
-      <Slider {...settings} ref={sliderRef}>
+    <div className="w-full overflow-x-auto scrollbar-hide my-4">
+      <div className="flex flex-row gap-4">
         {artItems.map((item) => (
-          <div key={item.id} className="pr-4">
+          <div key={item.id} className="pr-4 min-w-[127px]">
             <Card 
-              
               className="cursor-pointer rounded-xl overflow-hidden shadow-sm h-full flex flex-col"
             >
               <div 
@@ -127,9 +132,9 @@ export default function LowerCarousel() {
                 className="relative w-[127px] h-[150px] mx-auto"
               >
                 <Image
-                  src={item.image[0]}
+                  src={getWebpImageUrl(item.image[0])}
                   alt={item.name}
-                  className="w-full h-full object-cover rounded-2xl"
+                  className="w-full h-full object-contain bg-white rounded-2xl"
                   fill
                 />
               </div>
@@ -144,7 +149,7 @@ export default function LowerCarousel() {
             </Card>
           </div>
         ))}
-      </Slider>
+      </div>
     </div>
   );
 }

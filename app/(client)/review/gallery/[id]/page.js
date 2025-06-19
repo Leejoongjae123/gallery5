@@ -99,13 +99,18 @@ export default function page() {
       return;
     }
 
+    const maskedName = user.user_metadata?.name
+      ? user.user_metadata.name.length > 1
+        ? user.user_metadata.name[0] + '**'
+        : user.user_metadata.name
+      : user.email;
     // 리뷰가 존재하지 않는 경우 새로운 리뷰 작성
     const { data, error } = await supabase.from("gallery_review").insert({
       gallery_id: id,
       category: selectedFeelings,
       rating: rating,
       description: description,
-      name: user?.email,
+      name: maskedName,
       user_id: user.id,
     });
     if (error) {

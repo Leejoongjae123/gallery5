@@ -114,7 +114,13 @@ export default function GalleryCards({ selectedTab, user }) {
                 >
                   <CardBody className="flex gap-4 flex-row w-full h-full">
                     <img
-                      src={gallery.thumbnail || "/images/noimage.jpg"}
+                      src={
+                        gallery.thumbnail
+                          ? gallery.thumbnail.includes('/thumbnails/')
+                            ? gallery.thumbnail
+                            : gallery.thumbnail.replace('/gallery/', '/gallery/thumbnails/')
+                          : "/images/noimage.jpg"
+                      }
                       alt={gallery.name || "갤러리 이미지"}
                       className="w-24 h-24 object-cover rounded"
                     />

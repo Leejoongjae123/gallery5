@@ -38,53 +38,37 @@ import Image from "next/image";
 
 export function CategoryButtons() {
   return (
-    <div className="grid grid-cols-6 gap-2 px-4 w-full justify-evenly items-center">
+    <div className="grid grid-cols-4 gap-2 px-4 w-full justify-evenly items-center">
       <Link href="/exhibitions" className="flex flex-col items-center col-span-1">
-        <div className="flex flex-col items-center text-sm bg-gray-100 rounded-md cursor-pointer hover:bg-gray-200 w-[50px] h-[50px] justify-center shadow-md">
-          <FaCalendarAlt className="w-6 h-6 text-[#007AFF]" />
+        <div className="flex flex-col items-center text-sm bg-gray-100 rounded-xl cursor-pointer hover:bg-gray-200 w-[60px] h-[60px] justify-center shadow-md">
+          <FaCalendarAlt className="w-7 h-7 text-[#007AFF]" />
         </div>
         <div className="flex w-full justify-center items-center mt-2">
           <span className="text-[10px] font-bold">전시회</span>
         </div>
       </Link>
       <Link href="/galleries" className="flex flex-col items-center col-span-1">
-      <div className="flex flex-col items-center text-sm bg-gray-100 rounded-md cursor-pointer hover:bg-gray-200 w-[50px] h-[50px] justify-center shadow-md">
-            <FaHouseCircleCheck className="w-6 h-6 text-[#007AFF]" />
+        <div className="flex flex-col items-center text-sm bg-gray-100 rounded-xl cursor-pointer hover:bg-gray-200 w-[60px] h-[60px] justify-center shadow-md">
+          <FaHouseCircleCheck className="w-7 h-7 text-[#007AFF] scale-125" />
         </div>
         <div className="flex w-full justify-center items-center mt-2">
           <span className="text-[10px] font-bold">갤러리</span>
         </div>
       </Link>
       <Link href="/magazineList" className="flex flex-col items-center col-span-1">
-        <div className="flex flex-col items-center text-sm bg-gray-100 rounded-md cursor-pointer hover:bg-gray-200 w-[50px] h-[50px] justify-center shadow-md">
-          <FaBook className="w-6 h-6 text-[#007AFF]" />
+        <div className="flex flex-col items-center text-sm bg-gray-100 rounded-xl cursor-pointer hover:bg-gray-200 w-[60px] h-[60px] justify-center shadow-md">
+          <FaBook className="w-7 h-7 text-[#007AFF]" />
         </div>
         <div className="flex w-full justify-center items-center mt-2">
           <span className="text-[10px] font-bold">매거진</span>
         </div>
       </Link>
       <Link href="/artstore" className="flex flex-col items-center col-span-1">
-        <div className="flex flex-col items-center text-sm bg-gray-100 rounded-md cursor-pointer hover:bg-gray-200 w-[50px] h-[50px] justify-center shadow-md">
-          <FaShopify className="w-6 h-6 text-[#007AFF]" />
+        <div className="flex flex-col items-center text-sm bg-gray-100 rounded-xl cursor-pointer hover:bg-gray-200 w-[60px] h-[60px] justify-center shadow-md">
+          <FaShopify className="w-7 h-7 text-[#007AFF] scale-125" />
         </div>
         <div className="flex w-full justify-center items-center mt-2">
           <span className="text-[10px] font-bold">아트샵</span>
-        </div>
-      </Link>
-      <Link href="/eventList" className="flex flex-col items-center col-span-1">
-        <div className="flex flex-col items-center text-sm bg-gray-100 rounded-md cursor-pointer hover:bg-gray-200 w-[50px] h-[50px] justify-center shadow-md">
-          <MdEventAvailable className="w-6 h-6 text-[#007AFF]" />
-        </div>
-        <div className="flex w-full justify-center items-center mt-2">
-          <span className="text-[10px] font-bold">이벤트</span>
-        </div>
-      </Link>
-      <Link href="/cooperationList" className="flex flex-col items-center col-span-1">
-        <div className="flex flex-col items-center text-sm bg-gray-100 rounded-md cursor-pointer hover:bg-gray-200 w-[50px] h-[50px] justify-center shadow-md">
-          <FaHandsHelping className="w-6 h-6 text-[#007AFF]" />
-        </div>
-        <div className="flex w-full justify-center items-center mt-2">
-          <span className="text-[10px] font-bold">제휴</span>
         </div>
       </Link>
     </div>

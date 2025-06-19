@@ -77,6 +77,7 @@ export default function App() {
           .from("profiles")
           .select("*")
           .eq("id", id)
+          .eq("isArtistApproval", true)
           .single();
 
         if (error) {

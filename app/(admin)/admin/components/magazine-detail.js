@@ -7,6 +7,7 @@ import { createClient } from "@/utils/supabase/client";
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import Froala from "./Froala";
+
 export function MagazineDetail({
   magazine,
   onUpdate,
@@ -28,6 +29,7 @@ export function MagazineDetail({
     subtitle: magazine.subtitle || "",
     photos: magazine.photos || magazine.photo || [{ url: "" }],
     contents: magazine.contents || "",
+    created_at: magazine.created_at || "",
   });
   const [imageUploading, setImageUploading] = React.useState(false);
   const [uploadProgress, setUploadProgress] = React.useState(0);
@@ -56,6 +58,7 @@ export function MagazineDetail({
       // photo와 photos 모두 확인하여 처리 (데이터베이스에는 photo로 저장되므로)
       photos: magazine.photos || magazine.photo || [{ url: "" }],
       contents: magazine.contents || "",
+      created_at: magazine.created_at || "",
     });
 
     // Froala 에디터 내용도 함께 업데이트
@@ -73,36 +76,51 @@ export function MagazineDetail({
     prevMagazineIdRef.current = magazine.id;
   }, [magazine]);
 
+  // 브라우저에서 WebP 변환 함수
+  async function fileToWebP(file) {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      const reader = new FileReader();
+      reader.onload = (e) => { img.src = e.target.result; };
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(
+          (blob) => { resolve(blob); },
+          'image/webp',
+          0.8 // 압축률(0~1)
+        );
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   const uploadImageToSupabase = async (file) => {
     try {
       setImageUploading(true);
       setUploadProgress(0);
-      
-      // 파일 이름은 고유하게 생성 (UUID + 원본 파일명)
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${uuidv4()}.${fileExt}`;
+      // WebP 변환
+      const webpBlob = await fileToWebP(file);
+      const fileName = `${uuidv4()}.webp`;
       const filePath = `magazine/${fileName}`;
-      
       // Supabase storage에 이미지 업로드
       const { data, error } = await supabase.storage
         .from('magazine')
-        .upload(filePath, file, {
+        .upload(filePath, webpBlob, {
+          contentType: 'image/webp',
           cacheControl: '3600',
           upsert: false,
-          onUploadProgress: (progress) => {
-            setUploadProgress(Math.round((progress.loaded / progress.total) * 100));
-          },
         });
-
       if (error) {
         throw error;
       }
-
       // 업로드된 이미지의 공개 URL 생성
       const { data: publicUrlData } = supabase.storage
         .from('magazine')
         .getPublicUrl(filePath);
-
       setImageUploading(false);
       return publicUrlData.publicUrl;
     } catch (error) {
@@ -141,6 +159,7 @@ export function MagazineDetail({
             subtitle: editedMagazine.subtitle || "",
             contents: editedMagazine.contents || "",
             photo: filteredPhotos.length > 0 ? filteredPhotos : null,
+            created_at: editedMagazine.created_at || null,
           },
         ]).select();
 
@@ -170,6 +189,7 @@ export function MagazineDetail({
             subtitle: editedMagazine.subtitle || "",
             contents: editedMagazine.contents,
             photo: filteredPhotos.length > 0 ? filteredPhotos : null,
+            created_at: editedMagazine.created_at || null,
           })
           .eq("id", editedMagazine.id);
 
@@ -280,18 +300,33 @@ export function MagazineDetail({
   };
 
   const handleImageChange = async (e, index) => {
-    const file = e.target.files[0];
-    if (file) {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    let updatedPhotos = [...editedMagazine.photos];
+    let insertPos = index;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       const imageUrl = await uploadImageToSupabase(file);
       if (imageUrl) {
-        const updatedPhotos = [...editedMagazine.photos];
-        updatedPhotos[index] = { url: imageUrl };
-        setEditedMagazine({
-          ...editedMagazine,
-          photos: updatedPhotos,
-        });
+        // 비어있는 칸 찾기
+        while (insertPos < updatedPhotos.length && updatedPhotos[insertPos]?.url) {
+          insertPos++;
+        }
+        if (insertPos < updatedPhotos.length) {
+          updatedPhotos[insertPos] = { url: imageUrl };
+        } else {
+          updatedPhotos.push({ url: imageUrl });
+        }
+        insertPos++;
       }
     }
+
+    setEditedMagazine({
+      ...editedMagazine,
+      photos: updatedPhotos,
+    });
   };
 
   const addImageField = () => {
@@ -349,6 +384,14 @@ export function MagazineDetail({
           label="부제목"
           value={editedMagazine.subtitle || ''}
           onValueChange={(value) => setEditedMagazine({...editedMagazine, subtitle: value})}
+          className="md:col-span-2"
+        />
+
+        <Input
+          label="작성일"
+          type="datetime-local"
+          value={editedMagazine.created_at ? editedMagazine.created_at.slice(0, 16) : ""}
+          onValueChange={value => setEditedMagazine({ ...editedMagazine, created_at: value })}
           className="md:col-span-2"
         />
 
@@ -446,6 +489,7 @@ export function MagazineDetail({
                             type="file"
                             id={`photo-upload-${index + 1}`}
                             accept="image/*"
+                            multiple
                             onChange={(e) => handleImageChange(e, index + 1)}
                             className="hidden"
                             disabled={imageUploading}

@@ -47,6 +47,44 @@ const getFroalaEditor = (setFroalaError) =>
     }
   );
 
+// 브라우저에서 WebP 변환 함수 (최대 1200px 리사이즈 적용)
+async function fileToWebP(file) {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    const reader = new FileReader();
+    reader.onload = (e) => { img.src = e.target.result; };
+    img.onload = () => {
+      // 최대 크기 제한
+      const maxSize = 1200;
+      let targetW = img.width;
+      let targetH = img.height;
+      if (img.width > maxSize || img.height > maxSize) {
+        if (img.width > img.height) {
+          targetW = maxSize;
+          targetH = Math.round(img.height * (maxSize / img.width));
+        } else {
+          targetH = maxSize;
+          targetW = Math.round(img.width * (maxSize / img.height));
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, targetW, targetH);
+      canvas.toBlob(
+        (blob) => {
+          // webp Blob 반환
+          resolve(blob);
+        },
+        'image/webp',
+        0.8
+      );
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 const FroalaEditorComponent = ({ 
   value, 
   onChange, 
@@ -103,48 +141,36 @@ const FroalaEditorComponent = ({
         // 이미지 업로드 커스텀 핸들러 등록
         editor.events.on('image.beforeUpload', async function(images) {
           console.log('이미지 업로드 시작 - 버킷:', bucketName);
-          // 이미 업로드 중이면 중복 방지
           if (isImageBeingUploaded) return false;
-          
           isImageBeingUploaded = true;
-          
           try {
-            // 각 이미지를 Supabase에 업로드
             for (let i = 0; i < images.length; i++) {
               const file = images[i];
-              console.log('파일 정보:', file.name, file.type);
-              
-              // 파일 확장자 추출
-              const fileExtension = file.name.split('.').pop().toLowerCase();
-              const uniqueFileName = `${uuidv4()}.${fileExtension}`;
-              
+              // webp 변환 및 리사이즈
+              const webpBlob = await fileToWebP(file);
+              const uniqueFileName = `${uuidv4()}.webp`;
               // Supabase에 업로드
               const { data, error } = await supabase.storage
                 .from(bucketName)
-                .upload(uniqueFileName, file);
-
+                .upload(uniqueFileName, webpBlob, {
+                  contentType: 'image/webp',
+                });
               if (error) {
-                console.error('Supabase 업로드 에러:', error);
+                console.log('Supabase 업로드 에러:', error);
                 continue;
               }
-
               // 공개 URL 가져오기
               const { data: { publicUrl } } = supabase.storage
                 .from(bucketName)
                 .getPublicUrl(uniqueFileName);
-
               console.log('업로드된 이미지 URL:', publicUrl);
-              
-              // 에디터에 이미지 삽입
               editor.image.insert(publicUrl, null, null, editor.image.get());
             }
           } catch (error) {
-            console.error('이미지 업로드 중 오류:', error);
+            console.log('이미지 업로드 중 오류:', error);
           } finally {
             isImageBeingUploaded = false;
           }
-          
-          // 기본 업로드 방식 중단
           return false;
         });
 

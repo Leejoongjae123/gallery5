@@ -99,12 +99,17 @@ export default function page() {
       return;
     }
 
+    const maskedName = user.user_metadata?.name
+      ? user.user_metadata.name.length > 1
+        ? user.user_metadata.name[0] + '**'
+        : user.user_metadata.name
+      : user.email;
     const { data, error } = await supabase.from("exhibition_review").insert({
       exhibition_id: id,
       category: selectedFeelings,
       rating: rating,
       description: description,
-      name: user.email,
+      name: maskedName,
       user_id: user.id,
     });
     if (error) {

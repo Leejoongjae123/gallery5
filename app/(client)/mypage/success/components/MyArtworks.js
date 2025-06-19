@@ -77,7 +77,7 @@ export default function MyArtworks({ user, profile }) {
   };
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-[90%]">
+    <div className="grid grid-cols-4 gap-4 w-full">
       {isLoading ? (
         <div className="col-span-4 flex justify-center py-8">
           <Spinner variant="wave" color="primary" />

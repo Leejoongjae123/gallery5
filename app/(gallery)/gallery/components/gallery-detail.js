@@ -3,6 +3,12 @@ import { Input, Button, Textarea, Checkbox, useDisclosure, Modal, ModalContent, 
 import { Icon } from "@iconify/react";
 import { createClient } from "@/utils/supabase/client";
 
+// HTML 태그 제거 함수
+function stripHtmlTags(str) {
+  if (!str) return '';
+  return str.replace(/<[^>]*>?/gm, '');
+}
+
 export function GalleryDetail({ galleryId }) {
   const [gallery, setGallery] = useState(null);
   const [editedGallery, setEditedGallery] = useState(null);
@@ -10,6 +16,8 @@ export function GalleryDetail({ galleryId }) {
   const [user, setUser] = useState(null);
   const [saveMessage, setSaveMessage] = useState("");
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isEditing, setIsEditing] = useState(false);
+  const fileInputRef = React.useRef(null);
   
   // Supabase 클라이언트 생성
   const supabase = createClient();
@@ -119,21 +127,24 @@ export function GalleryDetail({ galleryId }) {
 
   return (
     <div className="space-y-6 ">
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2 justify-end w-full">
-          <Button color="primary" onPress={handleSave} isLoading={isLoading}>
-            <Icon icon="lucide:save" className="text-lg mr-1" />
-            저장
-          </Button>
-          
-          {/* <Button color="danger" onPress={handleDelete} isLoading={isLoading}>
-            <Icon icon="lucide:trash" className="text-lg mr-1" />
-            삭제
-          </Button> */}
+      <div className="flex items-center justify-center relative">
+        <h1 className="text-2xl font-bold text-center w-full">갤러리 관리</h1>
+        <div className="absolute right-0 top-1 flex gap-2">
+          {isEditing ? (
+            <Button color="primary" onPress={handleSave} isLoading={isLoading}>
+              <Icon icon="lucide:save" className="text-lg mr-1" />
+              저장
+            </Button>
+          ) : (
+            <Button color="primary" onPress={() => setIsEditing(true)}>
+              <Icon icon="lucide:edit" className="text-lg mr-1" />
+              수정
+            </Button>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <Input
           label="갤러리 이름"
           value={editedGallery.name}
@@ -142,16 +153,7 @@ export function GalleryDetail({ galleryId }) {
           }
           placeholder="갤러리의 공식 이름을 입력하세요"
           className="w-full"
-        />
-        <Input
-          label="갤러리 URL"
-          value={editedGallery.url}
-          onValueChange={(value) =>
-            setEditedGallery({ ...editedGallery, url: value })
-          }
-          placeholder="URL 경로를 입력하세요 (영문, 숫자, 하이픈만 사용)"
-          className="w-full"
-          isDisabled
+          isReadOnly={!isEditing}
         />
         <Input
           label="주소"
@@ -161,6 +163,7 @@ export function GalleryDetail({ galleryId }) {
           }
           placeholder="갤러리의 실제 주소를 입력하세요"
           className="w-full"
+          isReadOnly={!isEditing}
         />
         <Input
           label="전화번호"
@@ -170,6 +173,7 @@ export function GalleryDetail({ galleryId }) {
           }
           placeholder="연락 가능한 전화번호를 입력하세요"
           className="w-full"
+          isReadOnly={!isEditing}
         />
         <Input
           label="영업시간"
@@ -179,17 +183,133 @@ export function GalleryDetail({ galleryId }) {
           }
           placeholder="예: 10:00 - 18:00 (월-금)"
           className="w-full"
+          isReadOnly={!isEditing}
         />
-        <Input
-          label="대표 이미지 URL"
-          value={editedGallery.thumbnail}
-          onValueChange={(value) =>
-            setEditedGallery({ ...editedGallery, thumbnail: value })
-          }
-          placeholder="대표 이미지의 URL을 입력하세요"
-          className="w-full"
-        />
-
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <label className="block text-sm font-medium">썸네일 이미지</label>
+            {editedGallery.thumbnail && (
+              <Button
+                size="sm"
+                color="danger"
+                variant="flat"
+                onPress={() => {
+                  setEditedGallery({ ...editedGallery, thumbnail: "" });
+                }}
+                isDisabled={!isEditing}
+              >
+                <Icon icon="lucide:trash-2" className="text-sm mr-1" />
+                이미지 삭제
+              </Button>
+            )}
+          </div>
+          <div className="flex items-start space-x-4">
+            <div className="w-36 h-36 border border-dashed border-gray-300 rounded-lg overflow-hidden flex items-center justify-center bg-gray-50">
+              {editedGallery.thumbnail ? (
+                <img
+                  src={editedGallery.thumbnail}
+                  alt="썸네일 미리보기"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="text-gray-400 text-center p-2">
+                  <Icon icon="lucide:image" className="text-3xl mx-auto mb-1" />
+                  <p className="text-xs">이미지 없음</p>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 space-y-2">
+              {isEditing && (
+                <Button
+                  className="w-full"
+                  color="primary"
+                  variant="flat"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Icon icon="lucide:upload" className="text-lg mr-1" />
+                  이미지 선택
+                </Button>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+                  function fileToWebP(file) {
+                    return new Promise((resolve) => {
+                      const img = new window.Image();
+                      const reader = new FileReader();
+                      reader.onload = (ev) => { img.src = ev.target.result; };
+                      img.onload = () => {
+                        const maxSize = 1200;
+                        let targetW = img.width;
+                        let targetH = img.height;
+                        if (img.width > maxSize || img.height > maxSize) {
+                          if (img.width > img.height) {
+                            targetW = maxSize;
+                            targetH = Math.round(img.height * (maxSize / img.width));
+                          } else {
+                            targetH = maxSize;
+                            targetW = Math.round(img.width * (maxSize / img.height));
+                          }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = targetW;
+                        canvas.height = targetH;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, targetW, targetH);
+                        canvas.toBlob(
+                          (blob) => { resolve(blob); },
+                          'image/webp',
+                          0.8
+                        );
+                      };
+                      reader.readAsDataURL(file);
+                    });
+                  }
+                  const webpBlob = await fileToWebP(file);
+                  const supabase = createClient();
+                  const fileName = `${Date.now()}.webp`;
+                  const filePath = `gallery/${fileName}`;
+                  const { data, error } = await supabase.storage
+                    .from("gallery")
+                    .upload(filePath, webpBlob, {
+                      contentType: 'image/webp',
+                      cacheControl: '3600',
+                      upsert: false
+                    });
+                  if (error) {
+                    alert('이미지 업로드 오류: ' + error.message);
+                    return;
+                  }
+                  const { data: { publicUrl } } = supabase.storage
+                    .from("gallery")
+                    .getPublicUrl(filePath);
+                  setEditedGallery({ ...editedGallery, thumbnail: publicUrl });
+                }}
+                className="hidden"
+                disabled={!isEditing}
+              />
+              <p className="text-xs text-gray-500">
+                5MB 이하의 이미지 파일을 선택해주세요. (JPG, PNG, GIF)
+              </p>
+              {isEditing && (
+                <Input
+                  size="sm"
+                  label="또는 이미지 URL 직접 입력"
+                  value={editedGallery.thumbnail || ""}
+                  onValueChange={(value) => {
+                    setEditedGallery({ ...editedGallery, thumbnail: value });
+                  }}
+                  placeholder="https://example.com/image.jpg"
+                  isDisabled={false}
+                />
+              )}
+            </div>
+          </div>
+        </div>
         <Input
           label="홈페이지 URL"
           value={editedGallery.homepage_url}
@@ -198,34 +318,17 @@ export function GalleryDetail({ galleryId }) {
           }
           placeholder="갤러리 공식 웹사이트 URL을 입력하세요"
           className="w-full"
-        />
-
-        <Textarea
-          label="갤러리 소개"
-          value={editedGallery.shop_info}
-          onValueChange={(value) =>
-            setEditedGallery({ ...editedGallery, shop_info: value })
-          }
-          placeholder="갤러리에 대한 소개 정보를 입력하세요"
-          className="md:col-span-2"
+          isReadOnly={!isEditing}
         />
         <Textarea
           label="추가 정보"
-          value={editedGallery.add_info}
+          value={stripHtmlTags(editedGallery.add_info || "")}
           onValueChange={(value) =>
-            setEditedGallery({ ...editedGallery, add_info: value })
+            setEditedGallery({ ...editedGallery, add_info: stripHtmlTags(value) })
           }
           placeholder="방문객들에게 알리고 싶은 추가 정보를 입력하세요"
-          className="md:col-span-2"
-        />
-        <Textarea
-          label="갤러리 설명"
-          value={editedGallery.description}
-          onValueChange={(value) =>
-            setEditedGallery({ ...editedGallery, description: value })
-          }
-          placeholder="갤러리에 대한 상세 설명을 입력하세요"
-          className="md:col-span-2"
+          className="w-full"
+          isReadOnly={!isEditing}
         />
       </div>
 
@@ -243,7 +346,7 @@ export function GalleryDetail({ galleryId }) {
             {saveMessage}
           </ModalBody>
           <ModalFooter>
-            <Button color="primary" onPress={onClose}>
+            <Button color="primary" onClick={onClose}>
               확인
             </Button>
           </ModalFooter>

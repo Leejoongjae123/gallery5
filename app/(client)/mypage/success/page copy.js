@@ -85,6 +85,7 @@ const Success = () => {
             .from('profiles')
             .select('*')
             .eq('id', user.id)
+            .eq('isArtistApproval', true)
             .single();  
           if (profileData) {
             setIsArtist(profileData.isArtist);

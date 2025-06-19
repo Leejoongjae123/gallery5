@@ -19,6 +19,7 @@ import { debounce } from "lodash";
 import Link from "next/link";
 import * as XLSX from 'xlsx';
 import axios from "axios";
+import { v4 as uuidv4 } from 'uuid';
 
 
 export function GalleryList({
@@ -41,6 +42,8 @@ export function GalleryList({
   const [progressStatus, setProgressStatus] = useState(""); // 'processing', 'success', 'failed'
   const supabase = createClient();
   const fileInputRef = useRef(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const GetGalleries = async () => {
     const offset = (page - 1) * itemsPerPage;
@@ -294,6 +297,66 @@ export function GalleryList({
         return "danger";
       default:
         return "primary";
+    }
+  };
+
+  // 브라우저에서 WebP 변환 함수
+  async function fileToWebP(file) {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target.result;
+      };
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(
+          (blob) => {
+            resolve(blob);
+          },
+          'image/webp',
+          0.8 // 품질(0~1)
+        );
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // 이미지 업로드 함수
+  const uploadImage = async () => {
+    if (!imageFile) return null;
+    try {
+      setIsUploading(true);
+      const fileName = `${uuidv4()}.webp`;
+      const filePath = `gallery/${fileName}`;
+      // WebP 변환
+      const webpBlob = await fileToWebP(imageFile);
+      // Supabase Storage에 업로드
+      const { data, error } = await supabase.storage
+        .from("gallery")
+        .upload(filePath, webpBlob, {
+          contentType: 'image/webp',
+        });
+      if (error) throw error;
+      // 공개 URL 가져오기
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("gallery").getPublicUrl(filePath);
+      return publicUrl;
+    } catch (error) {
+      console.error("이미지 업로드 오류:", error);
+      addToast({
+        title: "이미지 업로드 오류",
+        description: error.message,
+        color: "danger",
+      });
+      return null;
+    } finally {
+      setIsUploading(false);
     }
   };
 

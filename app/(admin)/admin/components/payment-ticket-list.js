@@ -12,6 +12,8 @@ import {
   Button,
   addToast,
   Progress,
+  Select,
+  SelectItem,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { createClient } from "@/utils/supabase/client";
@@ -52,10 +54,16 @@ export function PaymentTicketList({
       .range(offset, offset + itemsPerPage - 1);
 
     if (search.trim()) {
-      query = query.or(
-        `order_id.ilike.%${search}%`,
-        `payment_key.ilike.%${search}%`,
-      );
+      if (/^\d+$/.test(search.trim())) {
+        // 숫자만 입력된 경우: 전시회ID로 필터
+        query = query.eq('exhibition_id', Number(search.trim()));
+      } else {
+        query = query.or(
+          `order_id.ilike.%${search}%`,
+          `payment_key.ilike.%${search}%`,
+          `exhibition_id.contents.ilike.%${search}%`
+        );
+      }
     }
 
     const { data, error, count } = await query;
@@ -173,11 +181,16 @@ export function PaymentTicketList({
     }
   };
 
+  // 렌더링 시 전시회ID(숫자) 검색이면 프론트에서 직접 필터링
+  const filteredTickets = search.trim() && /^\d+$/.test(search)
+    ? tickets.filter(ticket => ticket.exhibition_id?.id?.toString().includes(search))
+    : tickets;
+
   return (
     <div className="space-y-4 PaymentTicketList">
       <div className="flex items-center gap-4 w-full">
         <Input
-          placeholder="주문ID, 결제키, 유저ID 검색..."
+          placeholder="주문ID, 결제키, 유저ID, 전시회명, 전시회ID 검색..."
           value={search}
           onValueChange={setSearch}
           startContent={<Icon icon="lucide:search" className="text-default-400" />}
@@ -202,17 +215,19 @@ export function PaymentTicketList({
           <TableHeader>
             <TableColumn>ID</TableColumn>
             <TableColumn>구매일시</TableColumn>
+            <TableColumn>전시회명</TableColumn>
             <TableColumn>주문ID</TableColumn>
             <TableColumn>결제키</TableColumn>
             <TableColumn>금액</TableColumn>
             <TableColumn>인원수</TableColumn>
             <TableColumn>상태</TableColumn>
           </TableHeader>
-          <TableBody emptyContent={"티켓 구매 데이터가 없습니다."} items={tickets || []}>
+          <TableBody emptyContent={"티켓 구매 데이터가 없습니다."} items={filteredTickets || []}>
             {(ticket) => (
               <TableRow key={ticket.id}>
                 <TableCell>{ticket.id}</TableCell>
                 <TableCell>{ticket.created_at ? new Date(ticket.created_at).toLocaleString() : "-"}</TableCell>
+                <TableCell>{ticket.exhibition_id?.contents ? `${ticket.exhibition_id.contents} (ID: ${ticket.exhibition_id.id})` : '-'}</TableCell>
                 <TableCell>{ticket.order_id || "-"}</TableCell>
                 <TableCell>{ticket.payment_key || "-"}</TableCell>
                 <TableCell>{ticket.amount || 0}</TableCell>

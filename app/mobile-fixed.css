@@ -1,0 +1,19 @@
+/* 모바일 고정 폭 레이아웃 (반응형: 320~430px) */
+.mobile-fixed-width {
+  width: 100vw;
+  max-width: 430px;
+  min-width: 320px;
+  margin: 0 auto;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+  background: #fff; /* 내부 컨텐츠 영역은 흰색 */
+  min-height: 100vh;
+  height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* 바깥 여백(페이지 전체 배경)을 어두운 그라데이션으로 하고 싶다면, body나 html에 아래 스타일을 추가하세요:
+body {
+  background: linear-gradient(180deg, #111 0%, #333 100%) !important;
+}
+*/ 

@@ -73,7 +73,11 @@ export function ExhibitionCards({
                   <CardBody className="grid grid-cols-7 items-center justify-center gap-x-3">
                     <div className="col-span-2">
                       <img
-                        src={exhibition.photo || "/images/noimage.jpg"}
+                        src={
+                          exhibition.photo
+                            ? exhibition.photo
+                            : "/images/noimage.jpg"
+                        }
                         alt={exhibition.title}
                         className="w-20 h-20 object-cover rounded"
                       />
@@ -81,13 +85,21 @@ export function ExhibitionCards({
 
                     <div className="flex flex-col col-span-5">
                       <div className="flex flex-row justify-between items-start">
-                        <div className="flex flex-col">
-                          <div className="text-[10px]">{exhibition.name||'없음'}</div>
-                          <div className="text-[12px] font-bold">
+                        <div className="flex flex-col flex-1">
+                          <div className="text-[10px] text-gray-500">
+                            {exhibition.naver_gallery_url?.name || exhibition.gallery?.name || '미등록'}
+                          </div>
+                          <div className="text-base font-semibold">
+                            {exhibition.name}
+                          </div>
+                          <div className="text-[12px] font-bold mb-2">
                             {exhibition.contents}
                           </div>
+                          <div className="flex items-center w-full">
+                            <Divider orientation="horizontal" className="bg-gray-300 mb-2 w-full" />
+                          </div>
                         </div>
-                        <div onClick={(e) => toggleBookmark(e, exhibition)}
+                        <div className="flex-shrink-0 ml-2" onClick={(e) => toggleBookmark(e, exhibition)}
                              aria-label={isBookmarked(exhibition.id) ? "북마크 삭제" : "북마크 추가"}
                              role="button"
                              tabIndex={0}
@@ -100,37 +112,18 @@ export function ExhibitionCards({
                         </div>
                       </div>
 
-                      <Divider
-                        orientation="horizontal"
-                        className=" bg-gray-300"
-                      />
-                      <div className="text-xs flex flex-col mt-2">
+                      <div className="text-xs flex flex-col mt-0">
                         <div className="flex flex-row gap-1 text-[10px]">
-                          <FaCalendar className="w-3 h-3 text-[#007AFF]" />
-
-                          {exhibition.start_date?.replace(
-                            /(\d{4})(\d{2})(\d{2})/,
-                            "$1년$2월$3일"
-                          )}{" "}
-                          ~{" "}
-                          {exhibition.end_date?.replace(
-                            /(\d{4})(\d{2})(\d{2})/,
-                            "$1년$2월$3일"
-                          )}
+                          <FaCalendar className="text-[#007AFF] w-[12px] h-[12px] align-middle relative top-[1px]" />
+                          {exhibition.start_date?.replace(/(\d{4})(\d{2})(\d{2})/, "$1년$2월$3일")} ~ {exhibition.end_date?.replace(/(\d{4})(\d{2})(\d{2})/, "$1년$2월$3일")}
                         </div>
                         <div className="flex flex-row gap-1 text-[10px]">
-                          <FaMoneyBillWaveAlt className="w-3 h-3 text-[#007AFF]" />
-                          
-                          {exhibition.price
-                            ?.toString()
-                            .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}{" "}
-                          원
+                          <FaMoneyBillWaveAlt className="text-[#007AFF] w-[12px] h-[12px] align-middle relative top-[2px]" />
+                          {exhibition.price?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} 원
                         </div>
                         <div className="flex flex-row gap-1 text-[10px]">
-                          <FaStar className="w-3 h-3 text-[#007AFF]" />
-                          
-                          {exhibition.review_average === 0 ? "1.0" : exhibition.review_average?.toFixed(1) || "1.0"} (
-                          {exhibition.review_count || 0})
+                          <FaStar className="text-[#007AFF] w-[12px] h-[12px] align-middle relative top-[1px]" />
+                          {exhibition.review_average === 0 ? "1.0" : exhibition.review_average?.toFixed(1) || "1.0"} ({exhibition.review_count || 0})
                         </div>
                       </div>
                     </div>

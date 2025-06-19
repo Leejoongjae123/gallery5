@@ -41,7 +41,7 @@ export function ExhibitionCarousel() {
     slidesToShow: 1,
     slidesToScroll: 1,
     autoplay: true,
-    autoplaySpeed: 2000,
+    autoplaySpeed: 4000,
     pauseOnHover: true,
     arrows: false,
     dotsClass: "slick-dots custom-dots",
@@ -104,13 +104,19 @@ export function ExhibitionCarousel() {
                       transition={{ duration: 0.5 }}
                     >
                       <Image
-                        src={banner?.url || `/noimage.jpg`}
+                        src={
+                          banner?.thumbnail_url ||
+                          (banner?.url
+                            ? banner.url.replace(/\.(jpg|jpeg|png)$/i, ".webp")
+                            : "/noimage.jpg")
+                        }
                         alt={banner?.title || `Slide ${index + 1}`}
-                        className="w-full h-[200px] object-cover rounded-2xl"
-                        style={{ outline: 'none', WebkitTapHighlightColor: 'transparent' }}
-                        width={800}
-                        height={400}
+                        width={400}
+                        height={200}
+                        quality={70}
                         priority={index === 0}
+                        style={{ objectFit: "cover", borderRadius: "16px", outline: 'none', WebkitTapHighlightColor: 'transparent' }}
+                        className="w-full h-[200px] rounded-2xl"
                       />
                     </motion.div>
                   </div>

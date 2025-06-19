@@ -8,6 +8,7 @@ import { FaRegBookmark, FaBookmark } from "react-icons/fa6";
 import Link from "next/link";
 import { FaPlusCircle } from "react-icons/fa";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export function ExhibitionCards({
   exhibitions,
@@ -34,10 +35,20 @@ export function ExhibitionCards({
               <Link href={`/exhibition/${exhibition.id}`}>
                 <CardBody className="grid grid-cols-7 items-center justify-center gap-x-3">
                   <div className="col-span-2">
-                    <img
-                      src={exhibition.photo || "/images/noimage.jpg"}
+                    <Image
+                      src={
+                        exhibition.photo
+                          ? exhibition.photo.includes('/thumbnails/')
+                            ? exhibition.photo
+                            : exhibition.photo.replace('/gallery/', '/gallery/thumbnails/')
+                          : "/images/noimage.jpg"
+                      }
                       alt={exhibition.title}
+                      width={80}
+                      height={80}
                       className="w-20 h-20 object-cover rounded"
+                      priority={index === 0}
+                      loading={index === 0 ? "eager" : "lazy"}
                     />
                   </div>
 
@@ -45,7 +56,7 @@ export function ExhibitionCards({
                     <div className="flex flex-row justify-between items-start">
                       <div className="flex flex-col">
                         <div className="text-[10px]">{exhibition.name||'없음'}</div>
-                        <div className="text-[12px] font-bold">
+                        <div className="text-[12px] font-bold mb-1">
                           {exhibition.contents}
                         </div>
                       </div>
@@ -58,11 +69,11 @@ export function ExhibitionCards({
                       </div>
                     </div>
 
-                    <Divider
-                      orientation="horizontal"
-                      className=" bg-gray-300"
-                    />
                     <div className="text-xs flex flex-col mt-2">
+                      <Divider
+                        orientation="horizontal"
+                        className="bg-gray-300 my-0"
+                      />
                       <div className="flex flex-row gap-1 text-[10px]">
                         <img
                           src="/exhibition/미니달력.svg"

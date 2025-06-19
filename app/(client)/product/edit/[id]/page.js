@@ -12,6 +12,8 @@ import { createClient } from "@/utils/supabase/client";
 import { IoMdCloseCircleOutline } from "react-icons/io";
 import { CiImageOn } from "react-icons/ci";
 import { useParams } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
+
 export default function EditProduct() {
   const params = useParams();
   const [artwork, setArtwork] = useState(null);
@@ -94,6 +96,36 @@ export default function EditProduct() {
     }
   }, [params.id, router, supabase]);
 
+  // 브라우저 WebP 변환 (addProduct와 동일)
+  async function fileToWebP(file) {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      const reader = new FileReader();
+      reader.onload = (e) => (img.src = e.target.result);
+      img.onload = () => {
+        const max = 1200;
+        let w = img.width,
+          h = img.height;
+        if (w > max || h > max) {
+          if (w > h) {
+            h = Math.round(h * (max / w));
+            w = max;
+          } else {
+            w = Math.round(w * (max / h));
+            h = max;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob((blob) => resolve(blob), "image/webp", 0.8);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   const handleImageUpload = async (e) => {
     try {
       const files = Array.from(e.target.files);
@@ -103,22 +135,17 @@ export default function EditProduct() {
 
       const uploadedImages = [];
       for (const file of files) {
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `${fileName}`;
+        const webpBlob = await fileToWebP(file);
+        const fileName = `${uuidv4()}.webp`;
+        const filePath = `product/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
-          .from("avatars")
-          .upload(filePath, file);
+          .from("product")
+          .upload(filePath, webpBlob, { contentType: "image/webp" });
 
-        if (uploadError) {
-          throw uploadError;
-        }
+        if (uploadError) throw uploadError;
 
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("avatars").getPublicUrl(filePath);
-
+        const { data: { publicUrl } } = supabase.storage.from("product").getPublicUrl(filePath);
         uploadedImages.push(publicUrl);
       }
 
@@ -128,7 +155,7 @@ export default function EditProduct() {
       addToast({
         title: "이미지 업로드 실패",
         description: "이미지 업로드 중 오류가 발생했습니다.",
-        color: "danger"
+        color: "danger",
       });
     } finally {
       setIsUploading(false);

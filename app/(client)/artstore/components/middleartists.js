@@ -78,7 +78,8 @@ export default function ExhibitionLayout({ exhibitions, user, bookmarks, toggleB
           .from('profiles')
           .select('*')
           .eq('isArtist', true)
-          .limit(3);
+          .eq('isArtistApproval', true)
+          .limit(20);
 
         if (error) {
           console.log('작가 데이터를 불러오는 중 오류 발생:', error);
@@ -101,21 +102,36 @@ export default function ExhibitionLayout({ exhibitions, user, bookmarks, toggleB
     const fetchProducts = async () => {
       try {
         setProductsLoading(true);
+        // 1. 승인된 작가 id 리스트 조회
+        const { data: approvedArtists, error: artistError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('isArtist', true)
+          .eq('isArtistApproval', true);
+        if (artistError) {
+          console.log('승인 작가 조회 오류:', artistError);
+          setProducts([]);
+          setProductsLoading(false);
+          return;
+        }
+        const approvedArtistIds = (approvedArtists || []).map(a => a.id);
+        // 2. 모든 상품 불러오기
         const { data, error } = await supabase
           .from('product')
           .select('*')
-          .order('created_at', { ascending: false })
-          .limit(5);
-
+          .order('created_at', { ascending: false });
         if (error) {
           console.log('상품 데이터를 불러오는 중 오류 발생:', error);
+          setProducts([]);
+          setProductsLoading(false);
           return;
         }
-
-        setProducts(data || []);
+        // 3. 승인된 작가의 상품만 남김
+        setProducts((data || []).filter(item => approvedArtistIds.includes(item.artist_id)));
         setProductsLoading(false);
       } catch (error) {
         console.log('상품 데이터 로딩 오류:', error);
+        setProducts([]);
         setProductsLoading(false);
       }
     };
@@ -346,72 +362,64 @@ export default function ExhibitionLayout({ exhibitions, user, bookmarks, toggleB
         <img
           src={imageUrl}
           alt={altText}
-          className="w-full aspect-[335/148] object-cover rounded-xl"
+          className="w-full aspect-[335/148] object-contain bg-white rounded-xl"
         />
       </div>
     );
   }, []);
 
+  function getWebpImageUrl(url) {
+    if (!url) return "/noimage.jpg";
+    if (url.endsWith(".webp")) return url;
+    return url.replace(/\.(jpg|jpeg|png)$/i, ".webp");
+  }
+
+  console.log('MiddleArtists products:', products);
+
   return (
     <div className="w-full max-w-full overflow-hidden my-4">
       <div className="w-full">
         {/* 상단 3개 카드 - 작가 프로필 */}
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          {isLoading ? (
-            // 로딩 중일 때 스켈레톤 UI 표시
-            Array(3).fill().map((_, index) => (
-              <div key={`skeleton-${index}`} className="col-span-1">
-                <SkeletonCard />
-              </div>
-            ))
-          ) : (
-            artists.map((artist, index) => (
-              <Card 
-                key={`artist-${artist.id}`} 
-                classNames={{base: 'm-1'}} 
-                shadow="sm" 
-                radius="lg"
-                isPressable
-                onPress={() => router.push(`/artist/${artist.id}`)}
-              >
-                <CardBody className="p-0 relative w-full aspect-square">
-                  <Image 
-                    src={artist.avatar_url || "/noimage.jpg"} 
-                    alt="아티스트 이미지" 
-                    className="w-full h-full object-cover" 
-                    fill 
-                  />
-                </CardBody>
-                <CardFooter className="flex justify-center">  
-                  <div className="flex flex-row items-center justify-between w-full">
-                    <p className="text-[14px] font-medium line-clamp-1 text-[#606060] text-center w-full">
-                      {artist.artist_name || artist.full_name || "작가이름"}
-                    </p>
-
-                  </div>
-                </CardFooter>
-              </Card>
-            ))
-          )}
-        </div>
-        
-        {/* 캐러셀 섹션 */}
-        <div className="w-full relative p-1">
-          {/* react-slick 슬라이더 */}
-          <div className="product-slider">
-            {bannersLoading ? (
-              <div className="w-full aspect-[335/148]">
-                <Skeleton className="w-full h-full rounded-xl" />
-              </div>
+        <div className="w-full overflow-x-auto scrollbar-hide py-2">
+          <div className="flex flex-row gap-4">
+            {isLoading ? (
+              Array(5).fill().map((_, index) => (
+                <div key={`skeleton-${index}`} className="min-w-[100px]">
+                  <SkeletonCard />
+                </div>
+              ))
             ) : (
-              <Slider {...sliderSettings}>
-                {carouselItems.map((item, index) => (
-                  <SimpleCarouselItem key={`carousel-${index}`} item={item} />
-                ))}
-              </Slider>
+              artists.map((artist, index) => (
+                <div key={`artist-${artist.id}`} className="min-w-[100px]">
+                  <Card 
+                    className="min-w-[100px] m-1" 
+                    shadow="sm" 
+                    radius="lg"
+                    isPressable
+                    onPress={() => router.push(`/artist/${artist.id}`)}
+                  >
+                    <CardBody className="p-0 relative w-full aspect-square">
+                      <Image 
+                        src={artist.avatar_url || "/noimage.jpg"} 
+                        alt="아티스트 이미지" 
+                        className="w-full h-full object-cover bg-white" 
+                        fill 
+                      />
+                    </CardBody>
+                    <CardFooter className="flex justify-center">  
+                      <div className="flex flex-row items-center justify-between w-full">
+                        <p className="text-[14px] font-medium line-clamp-1 text-[#606060] text-center w-full">
+                          {artist.artist_name || artist.full_name || "작가이름"}
+                        </p>
+                      </div>
+                    </CardFooter>
+                  </Card>
+                </div>
+              ))
             )}
           </div>
         </div>
+        
         <Divider orientation="horizontal" className="my-4" />
         <div className="w-full">
           {productsLoading ? (
@@ -423,45 +431,49 @@ export default function ExhibitionLayout({ exhibitions, user, bookmarks, toggleB
               </div>
             ))
           ) : (
-            products.map((product, index) => (
-              <div key={`product-${product.id}`}>
-                <Card 
-                  shadow="none" 
-                  classNames={{base: 'gap-x-2 w-full',body: 'gap-x-2'}}
-                  isPressable
-                  onPress={() => router.push(`/product/${product.id}`)}
-                >
-                  <CardBody className="flex flex-row justify-center items-center ">
-                    <div className="w-[80px] h-[80px] relative">
-                      <Image src={product.image[0] || "/noimage.jpg"} alt="product image" className="w-full h-full object-cover " fill />
-                    </div>
-                    <div className="flex flex-col flex-grow ml-2">
-                      <p className="text-[14px] font-medium line-clamp-1 text-[#606060]">{product.name}</p>
-                      <p className="text-[14px] font-medium line-clamp-1 text-[#606060]">{product.size} </p>
-                      <p className="text-[14px] font-medium line-clamp-1 text-[#606060]">₩{product.price?.toLocaleString()}</p>
-                      
-                    </div>
-                    <div className="items-center bg-gray-300 rounded-lg p-2 h-[30px] w-[30px] flex justify-center items-center">
-                      <div 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          toggleProductBookmark(product.id);
-                        }}
-                        className="cursor-pointer"
-                      >
-                        {!!bookmarkedProducts[product.id] ? (
-                          <FaBookmark className="text-red-500 h-6 w-6 p-1.5 opacity-80 rounded-lg" />
-                        ) : (
-                          <FaRegBookmark className="text-white h-6 w-6 p-1.5 opacity-80 rounded-lg" />
-                        )}
+            products.length > 0 ? (
+              products.map((product, index) => (
+                <div key={`product-${product.id}`}>
+                  <Card 
+                    shadow="none" 
+                    classNames={{base: 'gap-x-2 w-full',body: 'gap-x-2'}}
+                    isPressable
+                    onPress={() => router.push(`/product/${product.id}`)}
+                  >
+                    <CardBody className="flex flex-row justify-center items-center ">
+                      <div className="w-[80px] h-[80px] relative">
+                        <Image src={getWebpImageUrl(product.image[0])} alt="product image" className="w-full h-full object-contain bg-white" fill />
                       </div>
-                    </div>
-                  </CardBody>
-                </Card>
-                {index < products.length - 1 && <Divider orientation="horizontal" className="my-2" />}
-              </div>
-            ))
+                      <div className="flex flex-col flex-grow ml-2">
+                        <p className="text-[14px] font-medium line-clamp-1 text-[#606060]">{product.name}</p>
+                        <p className="text-[14px] font-medium line-clamp-1 text-[#606060]">{product.size} </p>
+                        <p className="text-[14px] font-medium line-clamp-1 text-[#606060]">₩{product.price?.toLocaleString()}</p>
+                        
+                      </div>
+                      <div className="items-center bg-gray-300 rounded-lg p-2 h-[30px] w-[30px] flex justify-center items-center">
+                        <div 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            toggleProductBookmark(product.id);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          {!!bookmarkedProducts[product.id] ? (
+                            <FaBookmark className="text-red-500 h-6 w-6 p-1.5 opacity-80 rounded-lg" />
+                          ) : (
+                            <FaRegBookmark className="text-white h-6 w-6 p-1.5 opacity-80 rounded-lg" />
+                          )}
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+                  {index < products.length - 1 && <Divider orientation="horizontal" className="my-2" />}
+                </div>
+              ))
+            ) : (
+              <div className="w-full text-center text-gray-400 py-8">등록된 작품이 없습니다.</div>
+            )
           )}
         </div>
       </div>

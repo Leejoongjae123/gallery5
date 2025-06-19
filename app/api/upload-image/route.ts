@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import sharp from 'sharp';
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,11 +42,15 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
 
-    // Supabase Storage에 업로드
+    // sharp로 WebP 변환
+    const webpBuffer = await sharp(uint8Array).webp({ quality: 80 }).toBuffer();
+    const webpFileName = `${timestamp}_${originalName.replace(/\.[^.]+$/, '')}.webp`;
+
+    // Supabase Storage에 WebP 업로드
     const { data, error } = await supabase.storage
-      .from('product') // 'images' 버킷 사용 (미리 생성해야 함)
-      .upload(fileName, uint8Array, {
-        contentType: file.type,
+      .from('product')
+      .upload(webpFileName, webpBuffer, {
+        contentType: 'image/webp',
         upsert: false
       });
 
@@ -64,7 +69,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       url: urlData.publicUrl,
-      fileName: fileName
+      fileName: webpFileName
     });
 
   } catch (error) {

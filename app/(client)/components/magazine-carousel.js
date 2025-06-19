@@ -114,7 +114,7 @@ export function MagazineCarousel() {
             onClick={() => setSelected("michelin")}
           >
             <span className={`${selected === "michelin" ? "relative" : ""}`}>
-              미슐랭매거진
+              전시나그네 매거진
             </span>
           </button>
         </div>
@@ -122,12 +122,12 @@ export function MagazineCarousel() {
       {selected === "michelin" && (
         <div>
           {magazines.length > 0 ? (
-            <div className="relative">
+            <div className="relative w-full bg-transparent p-0 m-0">
               <Slider {...settings} className="slick-container" ref={sliderRef}>
                 {magazines.map((magazine, index) => (
                   <div key={index}>
                     <Card 
-                      className="w-full"
+                      className="w-full bg-transparent shadow-none border-none rounded-none p-0 m-0"
                     >
                       <CardBody className="p-0 relative">
                         <div 
@@ -151,14 +151,24 @@ export function MagazineCarousel() {
                             <span className="sr-only">매거진 보기</span>
                           </div>
                         </div>
+                        {/* 하단 edge에서부터 자연스러운 그림자(그라데이션) */}
+                        <div className="absolute bottom-0 left-0 right-0 h-28 pointer-events-none bg-gradient-to-t from-black/70 to-transparent z-10" />
+                        {/* 텍스트는 그림자 위에 올림 */}
                         <div 
-                          className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent text-white"
+                          className="absolute bottom-10 left-0 right-0 px-4 pb-0 mb-0 text-white z-20"
                           onClick={(e) => handleMagazineClick(e, magazine.id)}
                         >
-                          <h3 className="text-xl font-bold">
+                          <h3 className="text-base font-bold line-clamp-2 break-keep mb-1">
                             {magazine.title}
                           </h3>
-                          <p>{magazine.subtitle || "매거진 내용"}</p>
+                          <div className="flex flex-row items-center gap-2 mt-1">
+                            <span className="text-xs line-clamp-1 break-keep opacity-90">{magazine.subtitle || "매거진 내용"}</span>
+                            {magazine.created_at && (
+                              <span className="text-xs text-gray-300 ml-2">
+                                {new Date(magazine.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\./g, '.').replace(/\s/g, '')}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </CardBody>
                     </Card>
@@ -179,7 +189,6 @@ export function MagazineCarousel() {
                   margin: 0;
                   list-style: none;
                 }
-                
                 .slick-container .slick-dots li {
                   position: relative;
                   display: inline-block;
@@ -189,7 +198,6 @@ export function MagazineCarousel() {
                   padding: 0;
                   cursor: pointer;
                 }
-                
                 .slick-container .slick-dots li button {
                   font-size: 0;
                   line-height: 0;
@@ -203,20 +211,16 @@ export function MagazineCarousel() {
                   outline: none;
                   background: transparent;
                 }
-                
                 .slick-container .slick-dots li .dot-button {
                   display: block;
                   width: 8px;
                   height: 8px;
                   border-radius: 50%;
                 }
-                
                 .slick-container .slick-dots li.slick-active .dot-button {
                   width: 10px;
                   height: 10px;
                 }
-                
-                /* 이미지 클릭 시 하이라이트 제거 */
                 img {
                   -webkit-tap-highlight-color: transparent;
                   outline: none;
@@ -226,12 +230,11 @@ export function MagazineCarousel() {
             </div>
           ) : (
             <div className="flex justify-center items-center h-[300px]">
-              <Skeleton className="w-full h-[300px]"></Skeleton>
+              <Skeleton className="w-full h-[300px]" />
             </div>
           )}
         </div>
       )}
-      
     </div>
   );
 }

@@ -12,7 +12,7 @@ import {
   ToastProvider,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { FaPlusCircle } from "react-icons/fa";
@@ -20,7 +20,7 @@ import { useParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { FiMapPin } from "react-icons/fi";
 import { LuClock4 } from "react-icons/lu";
-import { IoMdInformationCircleOutline } from "react-icons/io";
+import { IoMdInformationCircleOutline, IoMdClose } from "react-icons/io";
 import { FaArrowLeft } from "react-icons/fa";
 import { LuSend } from "react-icons/lu";
 import { Divider } from "@heroui/react";
@@ -29,9 +29,17 @@ import { cn } from "@/utils/cn";
 import { LuWallet } from "react-icons/lu";
 import { FaRegBookmark, FaBookmark } from "react-icons/fa6";
 import { motion } from "framer-motion";
-import Slider from "react-slick";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
+import dynamic from 'next/dynamic';
+
+const Slider = dynamic(
+  async () => {
+    const mod = await import('react-slick');
+    await import('slick-carousel/slick/slick.css');
+    await import('slick-carousel/slick/slick-theme.css');
+    return mod.default;
+  },
+  { ssr: false, loading: () => <div>슬라이더 로딩 중...</div> }
+);
 
 // 리뷰 컴포넌트 추가
 
@@ -71,6 +79,12 @@ export default function App() {
 
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
+
+  // 매거진 스타일 전체보기 모달용 상태
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalIndex, setModalIndex] = useState(0);
 
   // 페이드인 애니메이션 설정
   const fadeInVariants = {
@@ -83,6 +97,9 @@ export default function App() {
       },
     },
   };
+
+  // 작가의 다른 작품 추천
+  const [otherWorks, setOtherWorks] = useState([]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -232,6 +249,31 @@ export default function App() {
     }
   };
 
+  // 모달 오픈 함수 (매거진 스타일)
+  const openImageModal = (idx) => {
+    setModalIndex(idx);
+    setModalOpen(true);
+  };
+  // 모달 닫기 함수
+  const closeImageModal = () => {
+    setModalOpen(false);
+  };
+
+  useEffect(() => {
+    if (!product?.artist_id?.id) return;
+    const fetchOtherWorks = async () => {
+      const { data, error } = await supabase
+        .from("product")
+        .select("*")
+        .eq("artist_id", product.artist_id.id)
+        .neq("id", product.id)
+        .order("created_at", { ascending: false })
+        .limit(4);
+      if (!error) setOtherWorks(data || []);
+    };
+    fetchOtherWorks();
+  }, [product]);
+
   return (
     <div className="max-w-md mx-auto bg-white min-h-screen">
       {isLoading ? (
@@ -263,7 +305,7 @@ export default function App() {
           {/* 이미지 슬라이더 - 이미지가 2개 이상일 때만 슬라이더 사용 */}
           <div className="relative w-full h-[40vh] mx-auto overflow-hidden">
             {productImages.length === 1 ? (
-              <div className="relative w-full h-[40vh] overflow-hidden">
+              <div className="relative w-full h-[40vh] overflow-hidden cursor-zoom-in" onClick={() => openImageModal(0)}>
                 <Image
                   src={productImages[0]}
                   alt="제품 이미지"
@@ -276,7 +318,7 @@ export default function App() {
             ) : (
               <Slider {...sliderSettings}>
                 {productImages.map((img, idx) => (
-                  <div key={idx} className="relative w-full h-[40vh] overflow-hidden">
+                  <div key={idx} className="relative w-full h-[40vh] overflow-hidden cursor-zoom-in" onClick={() => openImageModal(idx)}>
                     <Image
                       src={img}
                       alt={`제품 이미지 ${idx + 1}`}
@@ -290,6 +332,66 @@ export default function App() {
               </Slider>
             )}
           </div>
+
+          {/* 매거진 스타일 이미지 전체보기 모달 */}
+          {modalOpen && (
+            <div
+              className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center"
+              onClick={closeImageModal}
+            >
+              {/* 좌측 화살표 */}
+              {productImages.length > 1 && (
+                <button
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-50 bg-black/60 rounded-full w-12 h-12 flex items-center justify-center shadow-lg border-2 border-white/30 hover:bg-black/80 transition"
+                  onClick={e => {
+                    e.stopPropagation();
+                    setModalIndex((prev) => (prev === 0 ? productImages.length - 1 : prev - 1));
+                  }}
+                  aria-label="이전 이미지"
+                >
+                  {/* 굵은 화살표 SVG */}
+                  <svg width={32} height={32} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 8L12 16L20 24" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+              )}
+              <div
+                className="max-w-full max-h-full overflow-auto"
+                onClick={e => e.stopPropagation()}
+              >
+                <img
+                  src={productImages[modalIndex]}
+                  alt="원본 이미지"
+                  className="block max-w-full max-h-[90vh] mx-auto"
+                  draggable={false}
+                  style={{ cursor: 'zoom-out' }}
+                />
+              </div>
+              {/* 우측 화살표 */}
+              {productImages.length > 1 && (
+                <button
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-50 bg-black/60 rounded-full w-12 h-12 flex items-center justify-center shadow-lg border-2 border-white/30 hover:bg-black/80 transition"
+                  onClick={e => {
+                    e.stopPropagation();
+                    setModalIndex((prev) => (prev === productImages.length - 1 ? 0 : prev + 1));
+                  }}
+                  aria-label="다음 이미지"
+                >
+                  {/* 굵은 화살표 SVG */}
+                  <svg width={32} height={32} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 8L20 16L12 24" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+              )}
+              {/* dot 네비게이션 */}
+              <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 p-1">
+                {productImages.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={e => { e.stopPropagation(); setModalIndex(index); }}
+                    className={`w-2 h-2 rounded-full transition-colors duration-300 ${modalIndex === index ? "bg-red-500" : "bg-white border border-gray-300"}`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="w-[90%] h-full mt-4">
             <div className="w-full h-full">
@@ -362,7 +464,7 @@ export default function App() {
               <p>{product?.artist_id?.artist_intro}</p>
             </div>
           </div>
-          <div className="w-[90%] flex flex-row justify-between items-center gap-x-4 my-4 h-14 mb-20">
+          <div className="w-[90%] flex flex-row justify-between items-center gap-x-4 my-4 h-14 mb-8">
             <Button
               isIconOnly
               className="bg-gray-200 w-[20%] h-full text-[20px] font-bold"
@@ -394,55 +496,29 @@ export default function App() {
               구매연결
             </Button>
           </div>
+          {/* 작가의 다른 작품 추천 섹션 */}
+          {otherWorks.length > 0 && (
+            <div className="w-full flex flex-col items-center mt-8 pb-24">
+              <div className="w-[90%] flex flex-row justify-between items-center mb-2">
+                <h2 className="text-xl font-bold">작가의 다른 작품</h2>
+                {/* 전체보기 버튼 등 필요시 추가 */}
+              </div>
+              <div className="w-[90%] grid grid-cols-2 gap-4">
+                {otherWorks.map((item) => (
+                  <div key={item.id} className="bg-white rounded-xl shadow p-2 flex flex-col cursor-pointer" onClick={() => router.push(`/product/${item.id}`)}>
+                    <div className="relative w-full aspect-[4/3] mb-2 overflow-hidden rounded-lg">
+                      <img src={item.image?.[0] || "/noimage.jpg"} alt={item.name} className="object-cover w-full h-full" />
+                    </div>
+                    <div className="text-[15px] font-bold line-clamp-1 mb-1">{item.name}</div>
+                    <div className="text-[13px] text-gray-500 mb-1">{item.size || ""}</div>
+                    <div className="text-[14px] text-black font-bold">₩{item.price?.toLocaleString()}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </motion.div>
       )}
-      <style jsx global>{`
-        .slick-dots {
-          position: absolute !important;
-          bottom: 16px;
-          left: 0;
-          width: 100%;
-          display: flex !important;
-          justify-content: center;
-          z-index: 10;
-          padding: 0;
-          margin: 0;
-        }
-        .slick-dots li {
-          margin: 0 4px;
-        }
-        .slick-dots li button:before {
-          font-size: 12px;
-          color: white;
-          opacity: 1;
-        }
-        .slick-dots li.slick-active button:before {
-          color: #007AFF !important;
-          opacity: 1;
-        }
-        .slick-list{
-          margin:0 !important;
-          padding:0 !important;
-          gap:0 !important;
-        }
-        .slick-track {
-          display: flex !important;
-          gap: 0 !important;
-          margin: 0 !important;
-        }
-        .slick-slide {
-          padding: 0 !important;
-          margin: 0 !important;
-        }
-        .slick-slide > div {
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-        .slick-slider {
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-      `}</style>
     </div>
   );
 }

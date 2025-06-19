@@ -6,7 +6,39 @@ import {addToast} from "@heroui/toast"
 export default function App({searchParams}) {
   const [errors, setErrors] = React.useState({});
   const error=use(searchParams)?.error
-  useEffect(()=>{
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [rememberLogin, setRememberLogin] = React.useState(true);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && rememberLogin) {
+      const savedEmail = localStorage.getItem('gallery_login_email');
+      const savedPassword = localStorage.getItem('gallery_login_password');
+      if (savedEmail) setEmail(savedEmail);
+      if (savedPassword) setPassword(savedPassword);
+    }
+  }, [rememberLogin]);
+
+  const handleSaveLogin = () => {
+    if (typeof window !== 'undefined' && rememberLogin) {
+      localStorage.setItem('gallery_login_email', email);
+      localStorage.setItem('gallery_login_password', password);
+      addToast({
+        title: '저장 완료',
+        description: '아이디/비밀번호가 저장되었습니다.',
+        color: 'success',
+      });
+    }
+  };
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && !rememberLogin) {
+      localStorage.removeItem('gallery_login_email');
+      localStorage.removeItem('gallery_login_password');
+    }
+  }, [rememberLogin]);
+
+  React.useEffect(()=>{
     if(error){
       addToast({
         title: "로그인 실패",
@@ -43,6 +75,8 @@ export default function App({searchParams}) {
           placeholder="이메일을 입력해주세요"
           type="email"
           autocomplete="email"
+          value={email}
+          onValueChange={setEmail}
         />
 
         <Input
@@ -53,12 +87,26 @@ export default function App({searchParams}) {
           placeholder="비밀번호를 입력해주세요"
           type="password"
           autocomplete="current-password"
+          value={password}
+          onValueChange={setPassword}
         />
 
         <div className="flex gap-4">
-          <Button className="w-full" color="primary" type="submit">
+          <Button className="w-full" color="primary" type="submit" onClick={handleSaveLogin}>
             로그인
           </Button>
+        </div>
+        <div className="flex items-center mt-2">
+          <input
+            id="rememberLogin"
+            type="checkbox"
+            checked={rememberLogin}
+            onChange={e => setRememberLogin(e.target.checked)}
+            className="mr-2 w-4 h-4 accent-blue-600"
+          />
+          <label htmlFor="rememberLogin" className="text-sm select-none">
+            로그인 정보 기억하기
+          </label>
         </div>
       </div>
     </Form>

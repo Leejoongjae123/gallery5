@@ -84,8 +84,8 @@ export function PaymentTicketDetail({
 
   // 결제 취소 모달 표시
   const showCancelConfirmation = () => {
-    if (!ticket.payment_key || ticket.status === "cancel") {
-      toast.error("취소 불가", "취소할 수 없는 결제입니다.");
+    if (ticket.status === "cancel") {
+      toast.error("취소 불가", "이미 취소된 결제입니다.");
       return;
     }
     onOpen();
@@ -96,7 +96,27 @@ export function PaymentTicketDetail({
     onClose(); // 확인 모달 닫기
     setIsLoading(true);
     try {
-      // API 엔드포인트를 통한 결제 취소 요청
+      if (!ticket.payment_key) {
+        // 무료티켓(결제키 없음): DB 상태만 변경
+        const { error } = await supabase
+          .from("payment_ticket")
+          .update({ status: "cancel" })
+          .eq("id", ticket.id);
+        if (error) {
+          setResultMessage(`결제 취소 중 오류가 발생했습니다: ${error.message}`);
+          onResultOpen();
+          setIsLoading(false);
+          return;
+        }
+        toast.success("결제 취소 완료", "무료티켓이 성공적으로 취소되었습니다.");
+        if (onRefresh) {
+          onRefresh();
+          setRefreshToggle(prev => prev + 1);
+        }
+        setIsLoading(false);
+        return;
+      }
+      // 유료 결제: 기존 로직(API 호출)
       const response = await fetch('/api/payment/cancel', {
         method: 'POST',
         headers: {
@@ -119,23 +139,17 @@ export function PaymentTicketDetail({
 
       if (data.success) {
         toast.success("결제 취소 완료", "결제가 성공적으로 취소되었습니다.");
-        
         // 티켓 상태를 최신 정보로 업데이트
         const { data: updatedTicket, error: ticketError } = await supabase
           .from("payment_ticket")
           .select("*,exhibition_id(*),user_id(*)")
           .eq("id", ticket.id)
           .single();
-          
         if (!ticketError && updatedTicket) {
-          // 선택된 티켓 정보 업데이트
           setSelectedTicket(updatedTicket);
         }
-        
-        // 부모 컴포넌트의 새로고침 함수 호출
         if (onRefresh) {
           onRefresh();
-          // 새로고침 토글 상태를 변경하여 리스트 업데이트 트리거
           setRefreshToggle(prev => prev + 1);
         }
       } else {
